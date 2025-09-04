@@ -1,10 +1,10 @@
 {
-  "name": "RealAvul Link",
-  "short_name": "RelAvul",
+  "name": "Relatórios Urubupungá",
+  "short_name": "Relatórios",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#ffffff",
+  "background_color": "#d11a2d",
+  "theme_color": "#d11a2d",
   "icons": [
     {
       "src": "icon.png",
