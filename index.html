@@ -1,31 +1,50 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang='pt-br'>
 <head>
+    <meta charset='UTF-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
     <title>Relatórios Urubupungá</title>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
-    <link rel="icon" href="icon.png">
-    <link rel="apple-touch-icon" href="icon.png">
-    
-    <link rel="manifest" href="manifest.json">
-
+    <link rel='icon' href='icon.png'>
+    <link rel='apple-touch-icon' href='icon.png'>
+    <link rel='manifest' href='manifest.json'>
+    <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css'>
     <style>
         body {
             font-family: sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
             margin: 0;
-            background-color: #f0f0f0;
+            height: 100vh;
+            background: url('banner-home-frota.png') no-repeat center center fixed;
+            background-size: cover;
+            position: relative;
+        }
+        body::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-color: rgba(255, 255, 255, 0.25);
+            z-index: 0;
+        }
+        .header {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            padding: 20px;
+            background-color: rgba(255, 255, 255, 0.8);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
         }
         .container {
-            text-align: center;
-            /* Adicionado um pouco de espaço para melhor visualização */
+            position: relative;
+            z-index: 1;
             display: flex;
-            flex-direction: column; 
-            gap: 80px; /* Espaço entre os botões */
+            flex-direction: column;
+            align-items: center;
+            gap: 30px;
+            padding: 40px 20px;
         }
         .container a {
             display: inline-block;
@@ -36,22 +55,17 @@
             background-color: #d11a2d;
             border-radius: 12px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            /* Garante que ambos os botões tenham a mesma largura se necessário */
-            min-width: 200px;
+            min-width: 280px;
+            transition: transform 0.2s, box-shadow 0.2s;
         }
-    </style>
-</head>
-<body>
-
-    <div class="container">
-        <a href="https://gruponso-my.sharepoint.com/personal/cristiano_santos_urubupunga_com_br/_layouts/15/onedrive.aspx?id=%2Fpersonal%2Fcristiano%5Fsantos%5Furubupunga%5Fcom%5Fbr%2FDocuments%2FRelat%C3%B3rios%20de%20ponto%5Fexcel%2FREL%5FFISCAIS%5FAVUL%28EM%20USO%29&ga=1">IR PARA RELATÓRIOS</a>
-        
-        <a href="#" style="pointer-events: none; opacity: 0.5; cursor: not-allowed;" title="Indisponível até a próxima campanha">
-    </div>
-
-</body>
-</html>
-
+        .container a i {
+            margin-right: 10px;
+        }
+        .container a:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+        }
+        .disabled {
 
 
 
