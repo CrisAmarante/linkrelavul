@@ -120,5 +120,7 @@ header h1 {
 }
 /* Nova cor para o botão telefones */
 #btn-telefones {
+    font-size: 18px;
+    color: #000000;
     background-color: #00FA9A; /* verde claro */
 }
