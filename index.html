@@ -32,6 +32,10 @@
 
         <a class="button" id="btn-clandestinos-rto" href="#">
             <i class="fas fa-ban"></i> CLANDESTINOS OSASCO e CAJAMAR
+	</a>
+
+        <a class="button" id="btn-levantamentos" href="#">
+            <i class="fas fa-ban"></i> Levantamentos
         </a>
 
         <a class="button" id="btn-inspecoes-5s" href="#">
@@ -45,6 +49,27 @@
         <a class="button disabled" id="btn-segunda-tela" href="#">
             <i class="fas fa-lock"></i> INSPETORES>>>>
         </a>
+    </div>
+
+ <!-- Modal para Levantamentos-->
+    <div id="modal-levantamentos" class="modal">
+        <div class="modal-content">
+            <a class="button" href="https://forms.office.com/r/M6sAgSBTUE">
+                <i class="fas fa-ban"></i> (25/02/2026) Nº 1657, Ten. Marques
+            </a>
+            <a class="button" href="https://forms.office.com/r/pMV2StMB8m">
+                <i class="fas fa-ban"></i> (26/02/2026) Nº 2316, Ten. Marques
+	</a>
+            <a class="button" href="https://forms.office.com/r/NyDiZCFsbL">
+                <i class="fas fa-ban"></i> (02/03/2026) Nº 2386, Ten. Marques
+	</a>
+            <a class="button" href="https://forms.office.com/r/qxrGRxcmSL">
+                <i class="fas fa-ban"></i> (03/03/2026) Nº 292, Ver. Joaquim Barbosa
+	</a>
+            <a class="button" href="https://forms.office.com/r/hcF8FdSKM4">
+                <i class="fas fa-ban"></i> (04/03/2026) Nº 90, Ver. Joaquim Barbosa
+            </a>
+        </div>
     </div>
 
     <!-- Modal para Clandestinos-->
@@ -115,6 +140,11 @@
             openModal('modal-inspecoes-5s');
         });
 
+	  document.getElementById('btn-levantamentos').addEventListener('click', (e) => {
+            e.preventDefault();
+            openModal('modal-levantamentos');
+        });
+
         // Fechar modal ao clicar fora do conteúdo
         window.addEventListener('click', (e) => {
             if (e.target.classList.contains('modal')) {
@@ -124,11 +154,5 @@
     </script>
 </body>
 </html>
-
-
-
-
-
-
 
 
