@@ -176,6 +176,7 @@ window.addEventListener('load', () => {
   carregarInspetores();
   checkLoginStatus();
   aplicarBloqueioDeDatas();
+  mostrarBannerAviso()
 });
 
 // ====================================================================
