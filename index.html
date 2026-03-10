@@ -4,14 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PENSO - Prancheta eletrônica</title>
-    <link rel="icon" href="icon.jpg">
-    <link rel="apple-touch-icon" href="icon.jpg">
+    <link rel="icon" href="icon.png">
+    <link rel="apple-touch-icon" href="icon.png">
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-
+<div id="aviso-temporario" class="aviso-banner">
+    <div class="aviso-conteudo">
+        <h2>ATENÇÃO</h2>
+        <p>Período de inspeções 5S da frota Osasco iniciado em 11/03/2026.<br>
+           Preencha o formulário correspondente no menu INSPEÇÕES DE 5S.</p>
+        <p style="font-size: 0.9em; margin-top: 20px; opacity: 0.9;">
+           (este aviso desaparece automaticamente após 21/03/2026)
+        </p>
+    </div>
+</div>
     <div id="main-screen" class="container">
         <header>
             <h1><i class="fas fa-clipboard-list"></i> Painel de Acessos</h1>
@@ -37,7 +47,6 @@
 
         <a class="button" id="btn-inspecoes-5s" href="#">
             <i class="fa-solid fa-magnifying-glass"></i> INSPEÇÕES DE 5S
-			 <span class="tooltip">INSPEÇÕES DA FROTA DE OSASCO INICIADAS EM 11/03/2026</span>
         </a>
 
         <a class="button" id="btn-levantamentos" href="#">
@@ -74,7 +83,7 @@
             <a class="button" id="btn-Guaritas" href="https://forms.office.com/r/XDdEFdBwrC">
                 <i class="fas fa-clipboard-check"></i> 5S - GUARITAS
             </a>
-		<a class="button" id="btn-Imagens" href="https://forms.office.com/pages/responsepage.aspx?id=BT9x5o7JaUGYVqezBC5ZcbsSouziSbdKtQ1p901JfchUREIxR1pNUzQ0OEJLUTlGNzFRTEZKMTI1OC4u">
+		<a class="button" id="btn-Imagens" href="https://forms.office.com/r/XDdEFdBwrC">
                 <i class="fa-solid fa-video"></i> SOLICITAÇÃO DE IMAGEM
             </a>
        
@@ -94,7 +103,12 @@
      <!-- Modal para Levantamentos-->
      <div id="modal-levantamentos" class="modal">
         <div class="modal-content">
-
+<a class="button" href="https://forms.office.com/r/p6gvBtDSDP">
+                <i class="fa-solid fa-list-ul"></i> 07 - (06/03/2026) Nº 06, Av. Bento da Silva Bueno
+            </a>
+	<a class="button" href="https://forms.office.com/r/sQJLRP01GY">
+                <i class="fa-solid fa-list-ul"></i> 08 - (09/03/2026) Nº 72, R. Alexandrino Pinto da Silva
+            </a>
 	<a class="button" href="https://forms.office.com/r/vvFw0Xfg1U">
                 <i class="fa-solid fa-list-ul"></i> 09 - (10/03/2026) Nº 102, Av. Pedro Celestino L. Penteado
             </a>
@@ -145,9 +159,6 @@
     <script src="script.js"></script>
 </body>
 </html>
-
-
-
 
 
 
