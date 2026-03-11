@@ -132,6 +132,14 @@ function aplicarBloqueioDeDatas() {
 const dataInicio = new Date('2026-03-10T00:00:00');  // ← temporário para teste HOJE
 const dataFim    = new Date('2026-03-21T00:01:00');
 
+function fecharBanner() {
+    const banner = document.getElementById('aviso-temporario');
+    if (banner) {
+        banner.style.display = 'none';
+        console.log("Banner fechado pelo botão");
+    }
+}
+
 function mostrarBannerAviso() {
     const agora = new Date();
     const banner = document.getElementById('aviso-temporario');
@@ -141,30 +149,26 @@ function mostrarBannerAviso() {
         return;
     }
 
-    console.log("Verificando banner:", agora.toLocaleString('pt-BR')); // ← ajuda no debug
+    console.log("Verificando banner:", agora.toLocaleString('pt-BR'));
 
     if (agora >= dataInicio && agora < dataFim) {
         console.log("→ Banner deve aparecer");
         banner.style.display = 'flex';
 
-        const fecharAoClicar = () => {
-            banner.style.display = 'none';
-            console.log("Banner fechado por clique");
-        };
-        banner.addEventListener('click', fecharAoClicar, { once: true });
-
+        // Timeout para fechar automaticamente
         setTimeout(() => {
-            if (banner.style.display === 'flex') {
+            if (banner.style.display !== 'none') {
                 banner.style.display = 'none';
-                console.log("Banner fechado automaticamente após 12s");
+                console.log("Banner fechado automaticamente após 3s");
             }
-            banner.removeEventListener('click', fecharAoClicar);
-        }, 12000);
+        }, 3000);
+
     } else {
         console.log("→ Banner fora do período → escondido");
         banner.style.display = 'none';
     }
 }
+
 // ====================================================================
 // INICIALIZAÇÃO
 // ====================================================================
