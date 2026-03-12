@@ -180,12 +180,6 @@ window.addEventListener('load', () => {
   checkLoginStatus();
   aplicarBloqueioDeDatas();
 });
-// Ocultar o botão Levantamentos manualmente
-  const btnLevantamentos = document.getElementById('btn-levantamentos');
-  if (btnLevantamentos) {
-      btnLevantamentos.style.display = 'none'; 
-  }
-});
 
 // ====================================================================
 // EVENT LISTENERS
