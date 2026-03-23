@@ -129,8 +129,8 @@ function aplicarBloqueioDeDatas() {
   }
 }
 // Período do banner — ajuste conforme necessário
-const dataInicio = new Date('2026-03-10T00:00:00');  // ← temporário para teste HOJE
-const dataFim    = new Date('2026-03-21T00:01:00');
+const dataInicio = new Date('2026-07-10T00:00:00');  // ← temporário para teste HOJE
+const dataFim    = new Date('2026-07-21T00:01:00');
 
 function fecharBanner() {
     const banner = document.getElementById('aviso-temporario');
