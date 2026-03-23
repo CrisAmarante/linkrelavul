@@ -113,8 +113,8 @@ function closeModal(modalId) {
 // BLOQUEIO DE BOTÕES POR DATA (exemplo fixo)
 // ====================================================================
 const disableDates = {
-  'btn-osasco': new Date('2026-02-19'),
-  'btn-santana': new Date('2026-02-03')
+  'btn-osasco': new Date('2026-07-19'),
+  'btn-santana': new Date('2026-07-03')
 };
 
 function aplicarBloqueioDeDatas() {
@@ -161,7 +161,7 @@ function mostrarBannerAviso() {
                 banner.style.display = 'none';
                 console.log("Banner fechado automaticamente após 3s");
             }
-        }, 3000);
+        }, 2000);
 
     } else {
         console.log("→ Banner fora do período → escondido");
