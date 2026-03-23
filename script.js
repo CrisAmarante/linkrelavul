@@ -140,7 +140,7 @@ function fecharBanner() {
     }
 }
 
-function mostrarBannerAviso() {
+//function mostrarBannerAviso() {
     const agora = new Date();
     const banner = document.getElementById('aviso-temporario');
     
