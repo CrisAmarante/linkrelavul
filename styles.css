@@ -131,17 +131,19 @@ header h1 {
     background-color: #00FA9A; /* verde claro */
     display: none !important;
 }
+/* ... [Mantenha seus estilos iniciais do body e container] ... */
+
 .aviso-banner {
-    display: none;
+    display: none; /* Controlado via JS */
     position: fixed;
     inset: 0;
-    background-color: rgba(0, 0, 0, 0.65);
-    z-index: 100;
-    display: flex;                 /* garante centralização sempre */
+    background-color: rgba(0, 0, 0, 0.75);
+    z-index: 1000;
     justify-content: center;
     align-items: center;
-    padding: 20px;                 /* evita que o conteúdo encoste nas bordas */
+    padding: 20px;
     cursor: pointer;
+    transition: opacity 0.4s ease;
 }
 
 .aviso-conteudo {
@@ -151,8 +153,9 @@ header h1 {
     border-radius: 16px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     text-align: center;
-    width: min(420px, 90%);        /* mais inteligente que max-width */
+    width: min(420px, 90%);
     border: 3px solid #d11a2d;
+    position: relative; /* Para o botão fechar se posicionar corretamente */
 }
 
 .aviso-conteudo h2 {
