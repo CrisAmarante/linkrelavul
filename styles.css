@@ -131,7 +131,6 @@ header h1 {
     background-color: #00FA9A; /* verde claro */
   /*  display: none !important;*/
 }
-/* ... [Mantenha seus estilos iniciais do body e container] ... */
 
 .aviso-banner {
     display: none; /* Controlado via JS */
