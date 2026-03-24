@@ -129,7 +129,7 @@ header h1 {
     font-size: 18px;
     color: #000000;
     background-color: #00FA9A; /* verde claro */
-    display: none !important;
+  /*  display: none !important;*/
 }
 /* ... [Mantenha seus estilos iniciais do body e container] ... */
 
