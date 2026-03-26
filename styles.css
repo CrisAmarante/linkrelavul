@@ -1,5 +1,6 @@
 /* ============================================================
    PENSO - Prancheta Eletrônica
+   CSS Completo - Versão FLEXBOX (sem Grid) - CORRIGIDO
 ============================================================ */
 
 :root {
@@ -75,7 +76,7 @@ body::before {
   flex-direction: column;
   align-items: flex-end;
   justify-content: center;
-  width: 95%;
+  width: 100%;
   padding: 20px;
   overflow: hidden;
   gap: 20px;
