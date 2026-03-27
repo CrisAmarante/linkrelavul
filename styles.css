@@ -1,391 +1,318 @@
-/* ============================================================
-   PENSO - Prancheta Eletrônica
-   CSS Completo - Versão FLEXBOX (sem Grid) - CORRIGIDO
-============================================================ */
-
-:root {
-  --bg: rgba(255,255,255,0.88);
-  --text: #222;
-  --card-bg: rgba(255,255,255,0.88);
-  --modal-bg: rgba(255,255,255,0.95);
-  --accent: #d11a2d;
-  --banner-bg: rgba(255, 233, 199, 0.95);
-  --overlay: rgba(0,0,0,0.40);
+body {
+    font-family: sans-serif;
+    margin: 0;
+    height: 100vh;
+    background: url('banner-home-frota.png') no-repeat center center fixed;
+    background-size: cover;
+    position: relative;
 }
-
-body.dark {
-  --bg: rgba(18,18,18,0.90);
-  --text: #eee;
-  --card-bg: rgba(28,28,28,0.85);
-  --modal-bg: rgba(32,32,32,0.95);
-  --accent: #ff5252;
-  --banner-bg: rgba(55,55,55,0.80);
-  --overlay: rgba(0,0,0,0.65);
-}
-
-/* ====================== BASE GLOBAL ====================== */
-html, body {
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
-  font-family: system-ui, -apple-system, sans-serif;
-  color: var(--text);
-  background: transparent;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-}
-
-* { box-sizing: border-box; }
-
 body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  background: url('banner-home-frota.png') center/cover no-repeat;
-  filter: blur(10px) brightness(0.70);
-  z-index: -2;
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: rgba(255, 255, 255, 0.75);
+    z-index: 0;
 }
-
-/* Título Principal - fixo no topo */
-.titulo {
-  position: relative;
-  z-index: 30;
-  background: rgba(0,0,0,0.75);
-  color: #fff !important;
-  padding: 14px 0;
-  font-size: 1.38rem;
-  text-align: center;
-  margin: 0;
-  width: 100%;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-  flex-shrink: 0;
+.container {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: 20px;
+    padding: 20px;
 }
-
-@media (min-width: 769px) {
-  .titulo { font-size: 1.48rem; }
+header {
+    text-align: center;
+    margin-bottom: 30px;
 }
-
-/* ====================== CONTAINER RESPONSIVO ====================== */
-.screen-container {
-  flex: 1;
-  position: relative;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  justify-content: center;
-  width: 100%;
-  padding: 20px;
-  overflow: hidden;
-  gap: 20px;
+header h1 {
+    font-size: 28px;
+    color: #333;
 }
-
-.grid-panel {
-  width: 100%;
-  max-width: 480px;
-  margin-left: auto;
+.button {
+    position: relative;
+    display: inline-block;
+    padding: 15px 30px;
+    font-size: 18px;
+    color: #fff;
+    background-color: #d11a2d;
+    border-radius: 12px;
+    text-decoration: none;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    min-width: 260px;
+    text-align: center;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
-
-/* ====================== FLEXBOX - GRID DE BOTÕES (CORRIGIDO) ====================== */
-.cards-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 14px;
-  width: 100%;
-  max-width: 480px;
-  justify-content: flex-start;   /* garante que o último botão fique à esquerda */
+.button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
 }
-
-.card, .inspector-card {
-  background: var(--card-bg);
-  backdrop-filter: blur(10px);
-  border-radius: 12px;
-  text-decoration: none;
-  color: var(--text);
-  font-weight: 600;
-  font-size: 0.84rem;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.20);
-  border: 1px solid rgba(255,255,255,0.35);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  flex: 0 1 195px;               /* ← CORREÇÃO PRINCIPAL: tamanho fixo */
-  min-width: 195px;
-  aspect-ratio: 1 / 1;
-  transition: transform 0.25s ease;
-  padding: 10px;
-  text-align: center;
-  position: relative;
+.button.disabled {
+    pointer-events: none;
+    opacity: 0.5;
+    cursor: not-allowed;
 }
-
-.card:hover, .inspector-card:hover { 
-  transform: scale(1.05); 
-}
-
-.card-icon {
-  font-size: 1.65rem;
-  color: var(--accent);
-  margin-bottom: 10px;
-}
-
-/* Destaques */
-.card-relatorio, .card-inspetores { 
-  border: 2px solid var(--accent); 
-}
-
-.card-relatorio::after, .card-inspetores::after {
-  content: "★";
-  position: absolute;
-  top: 8px; right: 8px;
-  background: var(--accent); 
-  color: white;
-  font-size: 11px; 
-  width: 20px; height: 20px;
-  border-radius: 50%; 
-  display: flex; 
-  align-items: center; 
-  justify-content: center;
-}
-
-/* ====================== TELA DE INSPETORES ====================== */
-#inspector-screen {
-  flex: 1 !important;
-  display: flex !important;
-  flex-direction: column;
-  width: 100%;
-  padding: 0;
-  overflow: hidden;
-  position: relative;
-  z-index: 1;
-}
-
-#inspector-screen .grid-panel {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  padding: 20px 35px 20px 20px;
-}
-
-#inspector-screen .cards-grid {
-  max-width: 480px;
-}
-
-/* Botão Sair com nome discreto */
-#inspector-screen .logout-btn {
-  margin: 0 auto 30px auto;
-  min-width: 145px;
-  padding: 14px 32px;
-  font-size: 1.08rem;
-  background: #d11a2d;
-  color: white;
-  border: none;
-  border-radius: 10px;
-  font-weight: bold;
-  cursor: pointer;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.25);
-  transition: all 0.2s;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 3px;
-  line-height: 1.1;
-}
-
-#inspector-screen .logout-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 14px rgba(0,0,0,0.3);
-}
-
-#inspector-screen .logout-btn small {
-  font-size: 0.78rem;
-  font-weight: 400;
-  opacity: 0.9;
-}
-
-/* ====================== TOAST ====================== */
-#welcome-toast {
-  position: fixed;
-  top: 85px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--modal-bg);
-  backdrop-filter: blur(12px);
-  border-radius: 16px;
-  box-shadow: 0 8px 25px rgba(0,0,0,0.3);
-  padding: 20px 32px;
-  max-width: 340px;
-  width: 90%;
-  text-align: center;
-  font-size: 1.32rem;
-  line-height: 1.4;
-  font-weight: 500;
-  color: var(--text);
-  z-index: 11000;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transition: all 0.3s ease;
-}
-
-#welcome-toast.show {
-  display: flex;
-  opacity: 1;
-}
-
-#welcome-toast .toast-name {
-  color: var(--accent);
-  font-weight: 600;
-}
-
-.toast-close {
-  position: absolute;
-  top: 12px;
-  right: 14px;
-  background: none;
-  border: none;
-  font-size: 1.8rem;
-  color: var(--accent);
-  cursor: pointer;
-}
-
-/* ====================== RESPONSIVIDADE ====================== */
-@media (max-width: 768px) {
-  .screen-container,
-  #inspector-screen .grid-panel {
-    padding: 15px 20px;
-  }
-
-  .cards-grid {
-    gap: 10px;
-  }
-
-  .card, .inspector-card {
-    flex: 0 1 165px;          /* tamanho fixo também no mobile */
-    min-width: 165px;
-    font-size: 0.78rem;
+.tooltip {
+    visibility: hidden;
+    background-color: #333;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
     padding: 8px;
+    position: absolute;
+    z-index: 2;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%) translateY(10px);
+    opacity: 0;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    white-space: nowrap;
+}
+.button:hover .tooltip,
+.button.touch .tooltip {
+    visibility: visible;
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+/* Estilos para modais */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 10;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.4);
+    justify-content: center;
+    align-items: center;
+}
+.modal-content {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    width: 80%;
+    max-width: 400px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+.close {
+    color: #aaa;
+    align-self: flex-end;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+.close:hover,
+.close:focus {
+    color: black;
+    text-decoration: none;
+}
+/* Nova cor para o botão de segunda tela */
+#btn-segunda-tela {
+    background-color: #ff4500; /* Laranja */
+}
+/* Nova cor para o botão telefones */
+#btn-telefones {
+    font-size: 18px;
+    color: #000000;
+    background-color: #00FA9A; /* verde claro */
+}
+/* Nova cor para o botão levantamentos */
+#btn-levantamentos {
+    font-size: 18px;
+    color: #000000;
+    background-color: #00FA9A; /* verde claro */
+  /*  display: none !important;*/
+}
+
+.aviso-banner {
+    display: none; /* Controlado via JS */
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.75);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    cursor: pointer;
+    transition: opacity 0.4s ease;
+}
+
+.aviso-conteudo {
+    background: linear-gradient(135deg, #ffffff, #fff5f5);
+    color: #d11a2d;
+    padding: 2rem;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    text-align: center;
+    width: min(420px, 90%);
+    border: 3px solid #d11a2d;
+    position: relative; /* Para o botão fechar se posicionar corretamente */
+}
+
+.aviso-conteudo h2 {
+    margin: 0 0 1rem;
+    font-size: clamp(1.6rem, 4vw, 2.1rem); /* ajusta automaticamente */
+}
+
+.aviso-conteudo p {
+    margin: 0.8rem 0;
+    font-size: clamp(1rem, 3.5vw, 1.15rem);
+    line-height: 1.4;
+}
+
+/* Ajustes extras para telas muito pequenas */
+@media (max-width: 380px) {
+    .aviso-conteudo {
+        padding: 1.5rem;
+        border-width: 2px;
+    }
+}
+.botao-fechar-banner {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    width: 30px;
+    height: 30px;
+    background-color: #d11a2d;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    transition: all 0.2s ease;
+    z-index: 10;
+    overflow: hidden;
+}
+
+.botao-fechar-banner .icone {
+    transition: opacity 0.2s ease;
+}
+
+.botao-fechar-banner .texto {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 12px;
+    font-weight: normal;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    white-space: nowrap;
+}
+
+.botao-fechar-banner:hover .icone {
+    opacity: 0;
+}
+
+.botao-fechar-banner:hover .texto {
+    opacity: 1;
+}
+
+.botao-fechar-banner:hover {
+    background-color: #a01624;
+    transform: scale(1.1);
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+    width: 80px;
+}
+
+.botao-fechar-banner:active {
+    transform: scale(0.95);
+}
+/* ============================================================
+   GRID DE CARDS
+   ============================================================ */
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 18px;
+  padding: 20px;
+}
+
+/* ============================================================
+   CARD BASE
+   ============================================================ */
+.card {
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 20px 16px;
+  text-align: center;
+  text-decoration: none;
+  color: #222;
+  font-weight: 500;
+  font-size: 1rem;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Hover e clique */
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.12);
+}
+
+.card:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+}
+
+/* ============================================================
+   ÍCONES DOS CARDS
+   ============================================================ */
+.card-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: #007bff15;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.6rem;
+  color: #007bff;
+}
+
+/* ============================================================
+   ESTADO DESABILITADO (datas bloqueadas)
+   ============================================================ */
+.card.disabled {
+  opacity: 0.45;
+  pointer-events: none;
+  box-shadow: none;
+  transform: none;
+}
+
+/* ============================================================
+   RESPONSIVIDADE
+   ============================================================ */
+@media (max-width: 480px) {
+  .cards-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 14px;
+  }
+
+  .card {
+    padding: 16px 12px;
   }
 
   .card-icon {
-    font-size: 1.45rem;
+    width: 38px;
+    height: 38px;
+    font-size: 1.4rem;
   }
-
-  #inspector-screen .logout-btn {
-    margin: 10px auto 25px auto;
-    padding: 13px 28px;
-    font-size: 1.02rem;
-  }
-
-  #welcome-toast {
-    top: 78px;
-    padding: 16px 24px;
-    font-size: 1.22rem;
-  }
-}
-
-/* ====================== MODAIS, TEMA E BANNER ====================== */
-.modal {
-  position: fixed; 
-  inset: 0;
-  display: none; 
-  justify-content: center; 
-  align-items: center;
-  background: var(--overlay); 
-  backdrop-filter: blur(6px); 
-  z-index: 10000;
-}
-
-.modal.is-open { display: flex; }
-
-.modal-content {
-  background: var(--modal-bg); 
-  width: 85%; 
-  max-width: 360px;
-  padding: 22px; 
-  border-radius: 16px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
-}
-
-.modal-title { margin: 0; font-size: 1.25rem; }
-
-.modal-close {
-  background: none;
-  border: none;
-  font-size: 1.8rem;
-  cursor: pointer;
-  color: #666;
-}
-
-.modal-btn {
-  display: block; 
-  padding: 14px; 
-  margin: 10px 0;
-  background: var(--accent); 
-  color: white; 
-  border-radius: 10px;
-  text-align: center; 
-  text-decoration: none;
-  font-weight: 500;
-}
-
-.theme-toggle {
-  position: fixed;
-  top: 12px; 
-  right: 12px;
-  z-index: 1000;
-  background: var(--card-bg);
-  border: none;
-  width: 42px; 
-  height: 42px;
-  border-radius: 50%;
-  box-shadow: 0 3px 10px rgba(0,0,0,0.25);
-  font-size: 1.1rem;
-  cursor: pointer;
-}
-
-#aviso-temporario.banner {
-  position: fixed;
-  top: 70px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--banner-bg);
-  color: #333;
-  padding: 14px 24px;
-  border-radius: 12px;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.3);
-  z-index: 9999;
-  display: none;
-  align-items: center;
-  gap: 15px;
-  max-width: 90%;
-  text-align: center;
-  font-weight: 500;
-  border: 2px solid #ff9800;
-}
-
-.banner-close {
-  background: none;
-  border: none;
-  font-size: 1.6rem;
-  cursor: pointer;
-  color: #d11a2d;
-  padding: 0 8px;
-}
-
-button, a { cursor: pointer; }
-
-#inspector-screen[style*="display: none"] {
-  display: none !important;
 }
