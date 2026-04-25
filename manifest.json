@@ -1,14 +1,14 @@
 {
   "name": "PENSO_AVUL",
   "short_name": "PENSO",
-  "description": "Prancheta eletrônica -Testes de campo",
+  "description": "Prancheta eletrônica -PENSO",
   "id": "/testesavul/",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#d11a2d",
   "theme_color": "#d11a2d",
   "orientation": "portrait-primary",
-  "version": "2026.04.24-v1.00.01",
+  "version": "2026.04.25-v1.00.02",
   "icons": [
     {
       "src": "icon.png",
