@@ -1,7 +1,7 @@
 {
   "name": "Testes de campo",
   "short_name": "PENSO",
-  "description": "Prancheta eletrônica -Desenvolvimento",
+  "description": "Prancheta eletrônica -Relatórios",
   "id": "/testesavul/",
   "start_url": "./",
   "display": "standalone",
