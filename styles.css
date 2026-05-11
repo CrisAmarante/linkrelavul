@@ -78,7 +78,7 @@ body.dark::before { filter: blur(10px) brightness(0.85); }
   font-size: 16px; /* Mínimo de 16px evita zoom automático no iOS */
   text-align: center;
   background: var(--card-bg);
-  color: var(--text);
+  color: var(--text) !important;
   line-height: 1.2; /* Garante que o texto fique centralizado verticalmente */
   height: 44px; /* Altura fixa confortável para toque (touch target) */
   appearance: none; /* Remove estilos padrão do sistema que podem bugar */
