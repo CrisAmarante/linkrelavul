@@ -130,3 +130,70 @@ header h1 {
     color: #000000;
     background-color: #00FA9A; /* verde claro */
 }
+
+/* Estilos para o banner temporário */
+.aviso-banner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background-color: #ff9800;
+    color: #000000;
+    padding: 15px 0;
+    z-index: 100;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.aviso-conteudo {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+    text-align: center;
+}
+
+.aviso-conteudo h2 {
+    margin: 0 0 10px 0;
+    font-size: 1.2em;
+    color: #000000;
+}
+
+.aviso-conteudo p {
+    margin: 5px 0;
+    font-size: 1em;
+    color: #000000;
+}
+
+.botao-fechar-banner {
+    position: absolute;
+    top: 50%;
+    right: 20px;
+    transform: translateY(-50%);
+    background-color: #d11a2d;
+    color: #ffffff;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: background-color 0.2s ease;
+}
+
+.botao-fechar-banner:hover {
+    background-color: #b01525;
+}
+
+/* Ajuste para modo escuro */
+@media (prefers-color-scheme: dark) {
+    .aviso-banner {
+        background-color: #ffa726;
+        color: #000000;
+    }
+    
+    .aviso-conteudo h2,
+    .aviso-conteudo p {
+        color: #000000;
+    }
+}
