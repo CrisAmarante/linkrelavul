@@ -7,7 +7,7 @@ const DATA_FIM_BANNER    = new Date('2026-06-28T00:01:00');
 
 const disableDates = {
   //'btn-osasco': new Date('2026-06-29'),
-  'btn-santana': new Date('2026-06-18')
+  'btn-santana': new Date('2026-06-19')
 };
 
 // ====================================================================
