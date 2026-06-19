@@ -2,12 +2,12 @@
 // CONFIGURAÇÕES GERAIS
 // ====================================================================
 
-const DATA_INICIO_BANNER = new Date('2026-09-01T09:00:00');
-const DATA_FIM_BANNER    = new Date('2026-09-15T00:01:00');
+const DATA_INICIO_BANNER = new Date('2026-06-19T09:00:00');
+const DATA_FIM_BANNER    = new Date('2026-06-28T00:01:00');
 
 const disableDates = {
-  'btn-osasco': new Date('2026-09-01'),
- // 'btn-santana': new Date('2026-09-01')
+  'btn-osasco': new Date('2026-06-29'),
+  'btn-santana': new Date('2026-06-19')
 };
 
 // ====================================================================
