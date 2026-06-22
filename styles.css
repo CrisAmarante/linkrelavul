@@ -75,7 +75,7 @@ body.dark::before { filter: blur(10px) brightness(0.85); }
   padding: 8px 32px;
   border: 1px solid #cbd5e1;
   border-radius: 6px;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   color: var(--text, #1e293b);
   background: var(--card-bg, #ffffff);
   caret-color: var(--accent, #3b82f6);
