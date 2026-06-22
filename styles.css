@@ -61,8 +61,11 @@ body.dark::before { filter: blur(10px) brightness(0.85); }
 .field input, .field select { width: 100%; padding: 10px 12px; border: 2px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; text-align: center; background: var(--card-bg); color: var(--text); }
 .inspection-table { width: 100%; border-collapse: collapse; background: var(--card-bg); border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.15); margin-bottom: 20px; }
 .inspection-table th { background: var(--accent); color: white; padding: 10px 6px; font-size: 0.75rem; text-transform: uppercase; }
-.inspection-table td { padding: 8px 6px; border-bottom: 1px solid #e2e8f0; text-align: center; }
+.inspection-table td { padding: 8px 6px; border-bottom: 1px solid #e2e8f0; text-align: center; vertical-align: middle; }
 .item-name { text-align: left !important; font-weight: 700; color: var(--text); padding-left: 10px; font-size: 0.8rem; }
+.checkbox-cell { width: 50px; }
+.obs-row td { padding: 4px 10px 12px 10px; background: rgba(0,0,0,0.02); border-top: none; }
+.obs-row .obs-input { width: 96%; margin-left: 2%; }
 .custom-checkbox { display: block; position: relative; width: 24px; height: 24px; margin: 0 auto; cursor: pointer; }
 .custom-checkbox input { opacity: 0; width: 0; height: 0; }
 .checkmark { position: absolute; top: 0; left: 0; width: 24px; height: 24px; background: #e2e8f0; border-radius: 6px; transition: background 0.2s; }

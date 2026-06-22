@@ -18,11 +18,12 @@ class InspecaoVeicular {
     });
 
     // Configura os checkboxes e inputs de observação/posição
-    document.querySelectorAll('#tabela-inspecao tbody tr').forEach(row => {
+    document.querySelectorAll('#tabela-inspecao tbody tr.inspection-row').forEach(row => {
       const cbOk = row.querySelector('.ok');
       const cbDef = row.querySelector('.defeito');
-      const obsInput = row.querySelector('.obs-input');
-      //const obsInputVen = row.querySelector('.obs-input-ven');
+      const item = row.dataset.item;
+      const obsRow = document.querySelector(`#tabela-inspecao tbody tr.obs-row[data-item="${item}"]`);
+      const obsInput = obsRow ? obsRow.querySelector('.obs-input') : null;
       const posBtns = row.querySelectorAll('.pos-btn');
 
       const atualizarEstadoLinha = () => {
@@ -117,7 +118,7 @@ class InspecaoVeicular {
     if (getEl('carro')) getEl('carro').value = '';
     document
       .querySelectorAll(
-        '#tabela-inspecao tbody tr .ok, #tabela-inspecao tbody tr .defeito'
+        '#tabela-inspecao tbody tr.inspection-row .ok, #tabela-inspecao tbody tr.inspection-row .defeito'
       )
       .forEach(cb => (cb.checked = false));
 
@@ -143,11 +144,12 @@ class InspecaoVeicular {
       return null;
     }
     const itens = {};
-    document.querySelectorAll('#tabela-inspecao tbody tr').forEach(row => {
+    document.querySelectorAll('#tabela-inspecao tbody tr.inspection-row').forEach(row => {
       const item = row.dataset.item;
       const ok = row.querySelector('.ok').checked;
       const defeito = row.querySelector('.defeito').checked;
-      const obs = row.querySelector('.obs-input').value.trim();
+      const obsRow = document.querySelector(`#tabela-inspecao tbody tr.obs-row[data-item="${item}"]`);
+      const obs = obsRow ? obsRow.querySelector('.obs-input').value.trim() : '';
       itens[item] = { status: ok ? 'OK' : defeito ? 'DEFEITO' : '', obs: obs };
       if (item === 'ventilador') {
         itens[item].posicao = Array.from(row.querySelectorAll('.pos-btn.active'))
