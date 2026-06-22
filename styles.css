@@ -76,10 +76,11 @@ body.dark::before { filter: blur(10px) brightness(0.85); }
   border: 1px solid #cbd5e1;
   border-radius: 6px;
   font-size: 0.75rem;
-  color: var(--text);
-  background: var(--card-bg);
-  caret-color: var(--accent);
-  -webkit-text-fill-color: var(--text); /* força cor do texto em alguns navegadores */
+  color: var(--text, #1e293b);
+  background: var(--card-bg, #ffffff);
+  caret-color: var(--accent, #3b82f6);
+  -webkit-text-fill-color: unset; /* remove override que escondia o texto em mobile */
+  opacity: 1; /* garante visibilidade em iOS */
 }
 .posicao-container { margin-top: 6px; text-align: center; }
 .posicao-buttons { display: flex; gap: 6px; justify-content: center; }
