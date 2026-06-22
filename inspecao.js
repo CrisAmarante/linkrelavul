@@ -18,41 +18,53 @@ class InspecaoVeicular {
     });
 
     // Configura os checkboxes e inputs de observação/posição
-    document.querySelectorAll('#tabela-inspecao tbody tr.inspection-row').forEach(row => {
-      const cbOk = row.querySelector('.ok');
-      const cbDef = row.querySelector('.defeito');
-      const item = row.dataset.item;
-      const obsRow = document.querySelector(`#tabela-inspecao tbody tr.obs-row[data-item="${item}"]`);
-      const obsInput = obsRow ? obsRow.querySelector('.obs-input') : null;
-      const posBtns = row.querySelectorAll('.pos-btn');
+    const setupRowListeners = () => {
+      document.querySelectorAll('#tabela-inspecao tbody tr.inspection-row').forEach(row => {
+        const cbOk = row.querySelector('.ok');
+        const cbDef = row.querySelector('.defeito');
+        const item = row.dataset.item;
+        const obsRow = document.querySelector(`#tabela-inspecao tbody tr.obs-row[data-item="${item}"]`);
+        const obsInput = obsRow ? obsRow.querySelector('.obs-input') : null;
+        const posBtns = row.querySelectorAll('.pos-btn');
 
-      const atualizarEstadoLinha = () => {
-        const isDefective = cbDef.checked;
+        const atualizarEstadoLinha = () => {
+          const isDefective = cbDef.checked;
 
-        if (obsInput) {
-          obsInput.disabled = !isDefective;
-          if (!isDefective) obsInput.value = '';
-        }
+          if (obsInput) {
+            obsInput.disabled = !isDefective;
+            if (!isDefective) obsInput.value = '';
+          }
 
-        if (posBtns) {
-          posBtns.forEach(btn => {
-            btn.disabled = !isDefective;
-            if (!isDefective) btn.classList.remove('active');
+          if (posBtns && posBtns.length > 0) {
+            posBtns.forEach(btn => {
+              btn.disabled = !isDefective;
+              if (!isDefective) btn.classList.remove('active');
+            });
+          }
+        };
+
+        if (cbOk && cbDef) {
+          cbOk.addEventListener('change', () => {
+            if (cbOk.checked) cbDef.checked = false;
+            atualizarEstadoLinha();
+          });
+          cbDef.addEventListener('change', () => {
+            if (cbDef.checked) cbOk.checked = false;
+            atualizarEstadoLinha();
           });
         }
-      };
+        
+        // Inicializa o estado da linha
+        atualizarEstadoLinha();
+      });
+    };
 
-      if (cbOk && cbDef) {
-        cbOk.addEventListener('change', () => {
-          if (cbOk.checked) cbDef.checked = false;
-          atualizarEstadoLinha();
-        });
-        cbDef.addEventListener('change', () => {
-          if (cbDef.checked) cbOk.checked = false;
-          atualizarEstadoLinha();
-        });
-      }
-    });
+    // Aguarda o DOM estar pronto e configura os listeners
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', setupRowListeners);
+    } else {
+      setupRowListeners();
+    }
 
     // Botões de posição (F, M, T)
     document.querySelectorAll('.pos-btn').forEach(btn =>
