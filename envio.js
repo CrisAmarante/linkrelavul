@@ -716,7 +716,11 @@ function mostrarDetalheEnvio(envio) {
   const dataFormatada = formatarData(envio.data);
 
   let anexosHtml = 'Nenhum anexo';
-  if (envio.anexo && envio.anexo !== 'Nenhum' && envio.anexo.trim() !== '') {
+  // Usa anexosDetalhados se disponível (novo formato do backend), senão usa o método antigo
+  if (envio.anexosDetalhados && Array.isArray(envio.anexosDetalhados) && envio.anexosDetalhados.length > 0) {
+    const anexosProcessados = envio.anexosDetalhados.map(anexo => processarLinkAnexoDetalhado(anexo));
+    anexosHtml = `<div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px;">${anexosProcessados.join('')}</div>`;
+  } else if (envio.anexo && envio.anexo !== 'Nenhum' && envio.anexo.trim() !== '') {
     const links = envio.anexo.split(' ; ');
     const anexosProcessados = links.map(link => processarLinkAnexo(link));
     anexosHtml = `<div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px;">${anexosProcessados.join('')}</div>`;
@@ -731,6 +735,7 @@ function mostrarDetalheEnvio(envio) {
       <div><strong>LINHA:</strong> ${envio.linha || 'N/I'}</div>
       <div><strong>LOCAL:</strong> ${envio.local || 'N/I'} <strong>| DATA:</strong> ${dataFormatada}</div>
       <div><strong>RESPONSÁVEL:</strong> ${envio.fiscal || 'N/I'}</div>
+      ${envio.dataPreenchimento ? `<div><strong>DATA PREENCHIMENTO:</strong> ${envio.dataPreenchimento}</div>` : ''}
     </div>
   `;
 
@@ -790,6 +795,42 @@ function mostrarDetalheEnvio(envio) {
 // ====================================================================
 // PROCESSAR LINK DO ANEXO (THUMBNAIL) - idêntico ao original
 // ====================================================================
+function processarLinkAnexoDetalhado(anexo) {
+  // anexo tem: urlOriginal, urlDownload, urlVisualizacao, fileId
+  if (!anexo || !anexo.urlOriginal) return '';
+  
+  const downloadUrl = anexo.urlDownload || anexo.urlOriginal;
+  const viewUrl = anexo.urlVisualizacao || anexo.urlOriginal;
+  const fileId = anexo.fileId;
+  
+  if (fileId) {
+    const thumbnailUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w300`;
+    
+    return `
+      <div style="display: inline-block; margin: 5px; text-align: center; vertical-align: top; width: 130px;">
+        <a href="${viewUrl}" target="_blank" style="text-decoration: none;">
+          <img src="${thumbnailUrl}" 
+               alt="Pré-visualização" 
+               style="max-width: 120px; max-height: 120px; border-radius: 8px; border: 1px solid #ccc; cursor: pointer; background: #f0f0f0; object-fit: cover;"
+               onerror="this.onerror=null; this.parentElement.parentElement.innerHTML='<a href=\\'${downloadUrl}\\' target=\\'_blank\\' style=\\'color:#10b981; text-decoration:underline;\\'>📎 Anexo (imagem não disponível)</a>'">
+        </a>
+        <div style="margin-top: 5px;">
+          <small><a href="${downloadUrl}" target="_blank" download style="color: #10b981; font-weight: bold;">⬇️ Baixar</a></small>
+        </div>
+        <div><small><a href="${viewUrl}" target="_blank" style="color: #6b7280;">👁️ Visualizar</a></small></div>
+      </div>
+    `;
+  }
+
+  return `
+    <div style="margin: 5px; text-align: center;">
+      <a href="${downloadUrl}" target="_blank" download style="color: #10b981; text-decoration: underline; font-weight: bold;">⬇️ Baixar Anexo</a>
+      <br>
+      <small><a href="${viewUrl}" target="_blank" style="color: #6b7280;">👁️ Visualizar</a></small>
+    </div>
+  `;
+}
+
 function processarLinkAnexo(link) {
   link = link.trim();
   if (!link) return '';
@@ -815,6 +856,7 @@ function processarLinkAnexo(link) {
   if (fileId) {
     const thumbnailUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w300`;
     const originalUrl = `https://drive.google.com/uc?id=${fileId}`;
+    const downloadUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
     
     return `
       <div style="display: inline-block; margin: 5px; text-align: center; vertical-align: top; width: 130px;">
@@ -822,9 +864,12 @@ function processarLinkAnexo(link) {
           <img src="${thumbnailUrl}" 
                alt="Pré-visualização" 
                style="max-width: 120px; max-height: 120px; border-radius: 8px; border: 1px solid #ccc; cursor: pointer; background: #f0f0f0; object-fit: cover;"
-               onerror="this.onerror=null; this.parentElement.parentElement.innerHTML='<a href=\\'${originalUrl}\\' target=\\'_blank\\' style=\\'color:#10b981; text-decoration:underline;\\'>📎 Anexo (imagem não disponível)</a>'">
+               onerror="this.onerror=null; this.parentElement.parentElement.innerHTML='<a href=\\'${downloadUrl}\\' target=\\'_blank\\' style=\\'color:#10b981; text-decoration:underline;\\'>📎 Anexo (imagem não disponível)</a>'">
         </a>
-        <div><small><a href="${originalUrl}" target="_blank" style="color: #10b981;">Abrir original</a></small></div>
+        <div style="margin-top: 5px;">
+          <small><a href="${downloadUrl}" target="_blank" download style="color: #10b981; font-weight: bold;">⬇️ Baixar</a></small>
+        </div>
+        <div><small><a href="${originalUrl}" target="_blank" style="color: #6b7280;">👁️ Visualizar</a></small></div>
       </div>
     `;
   }
@@ -918,6 +963,18 @@ async function exportarParaPDF(envio) {
     doc.text(`Sent.: ${envio.sentido || '________'}`, rightCol, y);
     y += 16;
 
+    // Adiciona data de preenchimento se disponível
+    if (envio.dataPreenchimento) {
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(10);
+      doc.setTextColor(100, 100, 100);
+      doc.text(`Data Preenchimento: ${envio.dataPreenchimento}`, margin, y);
+      y += 8;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(11.5);
+      doc.setTextColor(0);
+    }
+
     doc.setFont("helvetica", "bold");
     doc.setFontSize(12);
     doc.text("Sr. Chefe", margin, y);
@@ -994,6 +1051,15 @@ async function exportarParaPDF(envio) {
     doc.setFontSize(7.5);
     doc.setTextColor(80, 80, 80);
     doc.text("Documento gerado eletronicamente • Valide o hash para verificar integridade", pageWidth/2, y, { align: "center" });
+
+    // Adiciona data de preenchimento abaixo do hash e detalhes da exportação
+    if (envio.dataPreenchimento) {
+      y += 8;
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(9);
+      doc.setTextColor(60, 60, 60);
+      doc.text(`Data Preenchimento: ${envio.dataPreenchimento}`, margin, y);
+    }
 
     doc.setTextColor(0);
 
@@ -1079,6 +1145,9 @@ function gerarTextoDetalheEnvio(envio) {
   texto += `MOTORISTA: ${envio.motorista || 'N/I'}\n`;
   texto += `LINHA: ${envio.linha || 'N/I'}  HISTÓRICO: ${envio.historico || 'N/I'}\n`;
   texto += `LOCAL: ${envio.local || 'N/I'}  DATA: ${dataFormatada}\n`;
+  if (envio.dataPreenchimento) {
+    texto += `DATA PREENCHIMENTO: ${envio.dataPreenchimento}\n`;
+  }
   texto += `ANEXOS: ${envio.anexos || 'Nenhum'}\n`;
   texto += `RESPONSÁVEL: ${envio.fiscal || 'N/I'}\n`;
   return texto;
