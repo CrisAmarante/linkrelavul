@@ -3,7 +3,7 @@
 // ====================================================================
 
 const DATA_INICIO_BANNER = new Date('2026-06-18T01:00:00');
-const DATA_FIM_BANNER    = new Date('2026-06-28T00:01:00');
+const DATA_FIM_BANNER    = new Date('2026-06-27T00:01:00');
 
 const disableDates = {
   //'btn-osasco': new Date('2026-06-29'),
