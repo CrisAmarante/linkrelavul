@@ -960,9 +960,13 @@ function doGet(e) {
     // LOGIN
     if (acao === "login") {
       const senhaDigitada = e.parameter.senha;
-      const apelidoLogin = e.parameter.apelido || e.parameter.fiscal || '';
       const ss = SpreadsheetApp.getActiveSpreadsheet();
       const sheetLogin = ss.getSheetByName("login");
+      
+      if (!sheetLogin) {
+        return enviarResposta({ sucesso: false, erro: 'Planilha de login não encontrada' });
+      }
+      
       const data = sheetLogin.getDataRange().getValues();
       
       let usuarioEncontrado = { sucesso: false };
@@ -978,11 +982,12 @@ function doGet(e) {
         // Coluna 6: Hash da senha
         const nome = data[i][1];
         const apelido = data[i][2];
-        const hashPlanilha = data[i][6];
+        const hashPlanilha = String(data[i][6] || "").trim();
         const funcao = data[i][4];
         const ativo = data[i][5];
         
-        if (apelido && ativo === "SIM") {
+        // Verifica se há um hash armazenado e se o usuário está ativo
+        if (apelido && hashPlanilha && ativo === "SIM") {
           const hashCalculado = gerarHashComSalt(senhaDigitada, apelido);
           if (hashCalculado === hashPlanilha) {
             usuarioEncontrado = {
@@ -998,6 +1003,7 @@ function doGet(e) {
       }
       
       if (!usuarioEncontrado.sucesso) {
+        const apelidoLogin = e.parameter.apelido || e.parameter.fiscal || 'Usuario';
         LogModule.registrarAcesso(apelidoLogin, 'LOGIN_FALHA', '', endpoint, imei, localizacaoGps);
       }
       
