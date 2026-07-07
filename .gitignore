@@ -1,1 +1,53 @@
-Nothing should be ignored based on the provided file changes. The only modified file is a JavaScript source file (`scr/auth/auth.js`), which should not be added to .gitignore.
+```
+# Google Apps Script
+**/*.gs.bak
+**/*.gs~*
+**/appsscript.json.bak
+**/appsscript.json~*
+
+# General
+*.log
+*.tmp
+*.swp
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+*.env.*
+
+# Dependencies
+node_modules/
+venv/
+.venv/
+__pycache__/
+.mypy_cache/
+.pytest_cache/
+.julia/
+zig*/
+target/
+.gradle/
+
+# Build artifacts
+dist/
+build/
+*.pyc
+*.class
+*.o
+*.exe
+*.dll
+*.so
+*.a
+*.obj
+*.out
+
+# Coverage
+coverage/
+htmlcov/
+.coverage
+
+# Editors
+.vscode/
+.idea/
+```
