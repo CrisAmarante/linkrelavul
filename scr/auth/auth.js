@@ -1,426 +1,314 @@
 /**
- * API - Comunicação com backend (Google Apps Script)
- * Gerencia inspetores, terminais e logs
+ * Autenticação e Controle de Acesso
+ * Gerencia login, logout, permissões e ajustes de UI por perfil
  */
 
-let INSPETORES = {};
-let refreshPromise = null;
-let terminaisCache = [];
-let terminaisTimestamp = 0;
-const TERMINAIS_CACHE_DURACAO = 30 * 60 * 1000; // 30 minutos
-let terminaisPromise = null;
-let todosTerminaisCache = [];
-let todosTerminaisPromise = null;
+// ====================================================================
+// VARIÁVEIS DE AUTENTICAÇÃO E PERMISSÕES
+// ====================================================================
+const ROLES_ALLOWED_INSPECTION = ['INSPETOR', 'ENCARREGADO', 'ADMIN', 'GERENTE', 'FISCAL', 'PLANTONISTA'];
+let currentUserRole = '';
+let canCreateInspection = false;
+let inactivityTimer = null;
+let INACTIVITY_TIMEOUT = 20 * 60 * 1000; // 20 minutos padrão (pode ser atualizado pelo admin)
 
 // ====================================================================
-// LOG DE ATIVIDADES
+// CARREGAR TIMEOUT DO BACKEND
 // ====================================================================
-async function registrarLog(nomeApelido) {
+async function carregarTimeoutInatividade() {
   try {
-    const formData = new URLSearchParams();
-    formData.append("nome", nomeApelido);
-    formData.append("acao", "Login bem-sucedido");
-    await fetch(URL_PLANILHA, { method: "POST", body: formData, mode: "no-cors" });
-  } catch (err) { 
-    console.warn("Falha ao registrar log:", err); 
+    const response = await fetch(`${URL_PLANILHA}?acao=admin_get_config&_=${Date.now()}`);
+    const data = await response.json();
+    if (data && data.sucesso && data.dados && data.dados.timeout) {
+      INACTIVITY_TIMEOUT = data.dados.timeout;
+      console.log(`✅ Timeout de inatividade carregado: ${INACTIVITY_TIMEOUT / 60000} minutos`);
+    }
+  } catch (err) {
+    console.warn('⚠️ Falha ao carregar timeout do servidor, usando padrão:', err);
   }
 }
 
 // ====================================================================
-// CARREGAR INSPETORES
+// VERIFICAR STATUS DE LOGIN
 // ====================================================================
-function processarDadosPlanilha(dados) {
-  if (Array.isArray(dados)) {
-    const novoObjeto = {};
-    dados.forEach(row => {
-      if (row.apelido && row.hash && row.ativo === "SIM") {
-        novoObjeto[row.apelido] = { 
-          hash: row.hash, 
-          nome: row.nome, 
-          funcao: row.funcao 
+async function checkLoginStatus() {
+  const logado = localStorage.getItem('inspectorLoggedIn');
+  const nome = localStorage.getItem('inspectorName');
+  const apelido = localStorage.getItem('inspectorApelido');
+  const roleSalva = localStorage.getItem('inspectorRole');
+  const main = getEl('main-screen');
+  const insp = getEl('inspector-screen');
+  const btnInspecao = getEl('btn-inspecao-veicular');
+  const btnEnvio = getEl('btn-envio-informacoes');
+  
+  if (logado === 'true' && nome && apelido) {
+    let role = roleSalva;
+    
+    // Atualiza papel se necessário
+    if (INSPETORES[apelido]) {
+      const roleFromServer = INSPETORES[apelido].funcao;
+      if (roleFromServer !== role) {
+        role = roleFromServer;
+        localStorage.setItem('inspectorRole', role);
+      }
+    }
+    
+    if (!role) {
+      logoutInspector();
+      return;
+    }
+    
+    currentUserRole = role;
+    canCreateInspection = (role === 'FISCAL' || role === 'INSPETOR');
+    
+    // Mostra/oculta cards especiais
+    if (btnInspecao && role !== 'MONITOR') btnInspecao.style.display = 'flex';
+    else if (btnInspecao) btnInspecao.style.display = 'none';
+    
+    if (btnEnvio && role !== 'MONITOR') btnEnvio.style.display = 'flex';
+    else if (btnEnvio) btnEnvio.style.display = 'none';
+    
+    // Mostra botão do Painel Admin apenas para ADMIN
+    const btnAdmin = getEl('btn-painel-admin');
+    if (btnAdmin) {
+      if (role === 'ADMIN') {
+        btnAdmin.style.display = 'flex';
+        btnAdmin.onclick = function(e) {
+          e.preventDefault();
+          abrirModalAdmin();
         };
+      } else {
+        btnAdmin.style.display = 'none';
+      }
+    }
+    
+    ajustarCardsPorPerfil(role);
+    
+    main.style.display = 'none';
+    insp.style.display = 'flex';
+    showWelcomeToast(apelido);
+    
+    // Inicia timer de inatividade
+    resetInactivityTimer();
+    setupInactivityListeners();
+    
+    if (typeof verificarNotificacoesAoIniciar === 'function') {
+      verificarNotificacoesAoIniciar();
+    }
+    
+    const logoutBtn = insp.querySelector('.logout-btn');
+    if (logoutBtn) logoutBtn.innerHTML = `Sair<small>${apelido}</small>`;
+    
+  } else {
+    localStorage.removeItem('inspectorLoggedIn');
+    localStorage.removeItem('inspectorName');
+    localStorage.removeItem('inspectorApelido');
+    localStorage.removeItem('inspectorRole');
+    main.style.display = 'flex';
+    insp.style.display = 'none';
+  }
+}
+
+// ====================================================================
+// LOGIN
+// ====================================================================
+async function login(e) {
+  e.preventDefault();
+  const senha = getEl('password').value.trim();
+  const errorMsg = getEl('login-error');
+  const btnSubmit = e.target.querySelector('button[type="submit"]');
+  
+  const textoOriginal = btnSubmit.innerHTML;
+  btnSubmit.innerHTML = 'Verificando...';
+  btnSubmit.disabled = true;
+  errorMsg.style.display = 'none';
+
+  const callbackName = 'loginCallback_' + Date.now();
+  
+  window[callbackName] = async function(resposta) {
+    delete window[callbackName];
+    btnSubmit.innerHTML = textoOriginal;
+    btnSubmit.disabled = false;
+
+    if (resposta && resposta.sucesso) {
+      localStorage.setItem('inspectorLoggedIn', 'true');
+      localStorage.setItem('inspectorName', resposta.nome);
+      localStorage.setItem('inspectorApelido', resposta.apelido);
+      localStorage.setItem('inspectorRole', resposta.funcao);
+      
+      // Limpa o campo de senha após login bem-sucedido
+      getEl('password').value = '';
+      
+      await refreshInspetores();
+      registrarLog(resposta.apelido);
+      
+      window.modals.login.close();
+      checkLoginStatus();
+    } else {
+      errorMsg.style.display = 'block';
+      getEl('password').value = '';
+      getEl('password').focus();
+    }
+  };
+
+  const script = document.createElement('script');
+  script.src = `${URL_PLANILHA}?acao=login&senha=${encodeURIComponent(senha)}&callback=${callbackName}`;
+  
+  script.onerror = () => {
+    delete window[callbackName];
+    btnSubmit.innerHTML = textoOriginal;
+    btnSubmit.disabled = false;
+    alert('Erro de conexão. Verifique sua internet.');
+  };
+  document.body.appendChild(script);
+}
+
+// ====================================================================
+// LOGOUT
+// ====================================================================
+function logoutInspector() {
+  // Limpa timer de inatividade
+  if (inactivityTimer) {
+    clearTimeout(inactivityTimer);
+    inactivityTimer = null;
+  }
+  
+  // Remove listeners de inatividade
+  document.removeEventListener('click', resetInactivityTimer);
+  document.removeEventListener('keydown', resetInactivityTimer);
+  document.removeEventListener('mousemove', resetInactivityTimer);
+  document.removeEventListener('scroll', resetInactivityTimer);
+  
+  localStorage.removeItem('inspectorLoggedIn');
+  localStorage.removeItem('inspectorName');
+  localStorage.removeItem('inspectorApelido');
+  localStorage.removeItem('inspectorRole');
+  checkLoginStatus();
+}
+
+// ====================================================================
+// CONTROLE DE INATIVIDADE
+// ====================================================================
+function resetInactivityTimer() {
+  if (inactivityTimer) {
+    clearTimeout(inactivityTimer);
+  }
+  
+  inactivityTimer = setTimeout(() => {
+    const apelido = localStorage.getItem('inspectorApelido');
+    if (apelido) {
+      alert(`⚠️ Sessão expirada por inatividade.\n\nUsuário: ${apelido}\n\nVocê será deslogado agora.`);
+      logoutInspector();
+    }
+  }, INACTIVITY_TIMEOUT);
+}
+
+function setupInactivityListeners() {
+  document.addEventListener('click', resetInactivityTimer);
+  document.addEventListener('keydown', resetInactivityTimer);
+  document.addEventListener('mousemove', resetInactivityTimer);
+  document.addEventListener('scroll', resetInactivityTimer);
+  document.addEventListener('touchstart', resetInactivityTimer);
+}
+
+// ====================================================================
+// TOAST DE BOAS-VINDAS
+// ====================================================================
+function showWelcomeToast(apelido) {
+  const toast = getEl('welcome-toast');
+  if (!toast) return;
+  
+  getEl('toast-name').textContent = apelido;
+  toast.classList.add('show');
+  setTimeout(() => hideWelcomeToast(), 5000); // 5 segundos
+  
+  const clickHandler = () => { 
+    hideWelcomeToast(); 
+    document.removeEventListener('click', clickHandler); 
+  };
+  setTimeout(() => document.addEventListener('click', clickHandler), 300);
+}
+
+function hideWelcomeToast() { 
+  const t = getEl('welcome-toast'); 
+  if (t) t.classList.remove('show'); 
+}
+
+// ====================================================================
+// BANNER DE AVISOS
+// ====================================================================
+function fecharBanner() { 
+  const b = getEl('aviso-temporario'); 
+  if (b) b.style.display = 'none'; 
+}
+
+function mostrarBannerAviso() {
+  const agora = new Date();
+  const banner = getEl('aviso-temporario');
+  if (banner) {
+    banner.style.display = (agora >= DATA_INICIO_BANNER && agora < DATA_FIM_BANNER) ? 'flex' : 'none';
+  }
+}
+
+function aplicarBloqueioDeDatas() {
+  const now = new Date();
+  for (const [id, date] of Object.entries(disableDates)) {
+    const btn = getEl(id);
+    if (btn && now < date) {
+      btn.classList.add('disabled');
+      btn.setAttribute('href', '#');
+      btn.title = `Disponível a partir de ${date.toLocaleDateString('pt-BR')}`;
+      btn.style.pointerEvents = 'none';
+      btn.style.opacity = '0.45';
+    }
+  }
+}
+
+// ====================================================================
+// AJUSTAR VISIBILIDADE DOS CARDS POR PERFIL
+// ====================================================================
+function ajustarCardsPorPerfil(role) {
+  const todosCards = document.querySelectorAll('#inspector-screen .inspector-card');
+  const cardInspecao = document.getElementById('btn-inspecao-veicular');
+  const cardEnvio = document.getElementById('btn-envio-informacoes');
+  
+  const cardRelatorioDiario = document.querySelector('a.inspector-card[href*="docs.google.com/forms/d/e/1FAIpQLSe82OZRZPC_WTgXqF0N2pAuiFaudKONLYRuSnfnBpLPS0fYpw"]');
+  const cardConsultaPlacas = document.querySelector('a.inspector-card[href*="app.powerbi.com/view"]');
+  const cardSolicitacaoImagem = document.querySelector('a.inspector-card[href*="forms.office.com/pages/responsepage.aspx?id=BT9x5o7JaUGYVqezBC5ZcbsSouziSbdKtQ1p901JfchUREIxR1pNUzQ0OEJLUTlGNzFRTEZKMTI1OC4u"]');
+  
+  if (role === 'FISCAL') {
+    todosCards.forEach(card => {
+      if (card === cardInspecao || card === cardEnvio) {
+        card.style.display = 'flex';
+      } else {
+        card.style.display = 'none';
       }
     });
-    INSPETORES = novoObjeto;
-  } else { 
-    INSPETORES = dados || {}; 
-  }
-}
-
-async function refreshInspetores() {
-  if (refreshPromise) return refreshPromise;
-  
-  refreshPromise = new Promise((resolve, reject) => {
-    const callbackName = 'processarDadosPlanilha_' + Date.now() + '_' + Math.random().toString(36).substr(2, 8);
-    
-    window[callbackName] = function(dados) {
-      processarDadosPlanilha(dados);
-      delete window[callbackName];
-      refreshPromise = null;
-      resolve();
-    };
-    
-    const script = document.createElement('script');
-    script.src = `${URL_PLANILHA}?callback=${callbackName}&_=${Date.now()}`;
-    script.onerror = () => { 
-      delete window[callbackName]; 
-      refreshPromise = null; 
-      reject(); 
-    };
-    document.body.appendChild(script);
-  });
-  
-  return refreshPromise;
-}
-
-// ====================================================================
-// TERMINAIS (apenas SIM) com cache
-// ====================================================================
-function carregarTerminais(forceRefresh = false) {
-  const agora = Date.now();
-  
-  if (!forceRefresh && terminaisCache.length && (agora - terminaisTimestamp < TERMINAIS_CACHE_DURACAO)) {
-    return Promise.resolve(terminaisCache);
-  }
-  
-  if (terminaisPromise) return terminaisPromise;
-  
-  terminaisPromise = new Promise((resolve) => {
-    const callbackName = 'carregarTerminaisCallback_' + Date.now();
-    
-    window[callbackName] = function(terminais) {
-      terminaisCache = terminais;
-      terminaisTimestamp = Date.now();
-      delete window[callbackName];
-      terminaisPromise = null;
-      resolve(terminais);
-    };
-    
-    const script = document.createElement('script');
-    script.src = `${URL_PLANILHA}?acao=terminais&callback=${callbackName}&_=${Date.now()}`;
-    
-    script.onerror = () => {
-      delete window[callbackName];
-      terminaisPromise = null;
-      terminaisCache = ['Terminal A', 'Terminal B', 'Terminal C', 'Terminal D'];
-      terminaisTimestamp = Date.now();
-      resolve(terminaisCache);
-    };
-    document.body.appendChild(script);
-  });
-  
-  return terminaisPromise;
-}
-
-function preencherSelectTerminais() {
-  const select = getEl('terminal');
-  if (!select) return;
-  
-  carregarTerminais().then(terminais => {
-    const valorAtual = select.value;
-    select.innerHTML = '<option value="">Selecione...</option>';
-    terminais.forEach(t => { 
-      const opt = document.createElement('option'); 
-      opt.value = t; 
-      opt.textContent = t; 
-      select.appendChild(opt); 
+  } else if (role === 'SAF') {
+    todosCards.forEach(card => {
+      if (card === cardRelatorioDiario || card === cardConsultaPlacas || 
+          card === cardSolicitacaoImagem || card === cardEnvio) {
+        card.style.display = 'flex';
+      } else {
+        card.style.display = 'none';
+      }
     });
-    if (valorAtual && terminais.includes(valorAtual)) select.value = valorAtual;
-  });
-}
-
-// ====================================================================
-// TODOS OS TERMINAIS (para local no envio)
-// ====================================================================
-function carregarTodosTerminais(forceRefresh = false) {
-  if (!forceRefresh && todosTerminaisCache.length) {
-    return Promise.resolve(todosTerminaisCache);
-  }
-  
-  if (todosTerminaisPromise) return todosTerminaisPromise;
-  
-  todosTerminaisPromise = new Promise((resolve) => {
-    const callbackName = 'carregarTodosTerminaisCallback_' + Date.now();
-    
-    window[callbackName] = function(terminais) {
-      todosTerminaisCache = terminais;
-      delete window[callbackName];
-      todosTerminaisPromise = null;
-      resolve(terminais);
-    };
-    
-    const script = document.createElement('script');
-    script.src = `${URL_PLANILHA}?acao=terminais_todos&callback=${callbackName}&_=${Date.now()}`;
-    
-    script.onerror = () => {
-      delete window[callbackName];
-      todosTerminaisPromise = null;
-      todosTerminaisCache = ['Terminal A', 'Terminal B', 'Terminal C', 'Terminal D'];
-      resolve(todosTerminaisCache);
-    };
-    document.body.appendChild(script);
-  });
-  
-  return todosTerminaisPromise;
-}
-
-function preencherSelectLocal() {
-  const select = getEl('envio-local');
-  if (!select) return;
-  
-  carregarTodosTerminais().then(terminais => {
-    const valorAtual = select.value;
-    select.innerHTML = '<option value="">Selecione...</option>';
-    terminais.forEach(t => { 
-      const opt = document.createElement('option'); 
-      opt.value = t; 
-      opt.textContent = t; 
-      select.appendChild(opt); 
+  } else {
+    todosCards.forEach(card => {
+      card.style.display = 'flex';
     });
-    if (valorAtual && terminais.includes(valorAtual)) select.value = valorAtual;
-  });
+  }
 }
 
 // Exportar para escopo global
-window.INSPETORES = INSPETORES;
-window.refreshInspetores = refreshInspetores;
-window.carregarTerminais = carregarTerminais;
-window.preencherSelectTerminais = preencherSelectTerminais;
-window.carregarTodosTerminais = carregarTodosTerminais;
-window.preencherSelectLocal = preencherSelectLocal;
-window.registrarLog = registrarLog;
-
-// ====================================================================
-// FUNÇÕES DE LOGIN E AUTENTICAÇÃO
-// ====================================================================
-
-/**
- * Função de login - valida credenciais com o backend
- */
-async function login(e) {
-  if (e) e.preventDefault();
-  
-  const passwordInput = getEl('password');
-  const errorEl = getEl('login-error');
-  const senha = passwordInput ? passwordInput.value.trim() : '';
-  
-  console.log('🔐 Tentativa de login iniciada...');
-  
-  if (!senha) {
-    console.warn('⚠️ Senha vazia');
-    if (errorEl) {
-      errorEl.textContent = 'Digite sua senha!';
-      errorEl.style.display = 'block';
-    }
-    return;
-  }
-  
-  try {
-    // Busca os inspetores atualizados
-    console.log('📡 Buscando inspetores...');
-    await refreshInspetores();
-    console.log('✅ Inspetores carregados:', Object.keys(INSPETORES).length);
-    
-    let usuarioEncontrado = null;
-    
-    // Tenta encontrar usuário comparando hash calculado com hash armazenado
-    // O hash é calculado usando senha + apelido como salt (mesmo método do backend)
-    for (const [apelido, dados] of Object.entries(INSPETORES)) {
-      const hashedPassword = await hashPassword(senha, apelido);
-      console.log('🔍 Testando apelido:', apelido, '| Hash calculado:', hashedPassword.substring(0, 10) + '...', '| Hash armazenado:', dados.hash.substring(0, 10) + '...');
-      
-      if (dados.hash === hashedPassword || dados.hash === senha) {
-        usuarioEncontrado = {
-          apelido: apelido,
-          nome: dados.nome,
-          funcao: dados.funcao
-        };
-        console.log('✅ Usuário encontrado localmente:', apelido);
-        break;
-      }
-    }
-    
-    // Se não encontrou localmente, tenta fazer login via API
-    if (!usuarioEncontrado) {
-      console.log('🌐 Tentando login via API...');
-      const response = await fetch(`${URL_PLANILHA}?acao=login&senha=${encodeURIComponent(senha)}&apelido=_any_`, {
-        method: 'GET',
-        headers: { 'Accept': 'application/json' }
-      });
-      
-      const result = await response.json();
-      console.log('📩 Resposta da API:', result);
-      
-      if (result && result.sucesso) {
-        usuarioEncontrado = {
-          apelido: result.apelido,
-          nome: result.nome,
-          funcao: result.funcao
-        };
-      }
-    }
-    
-    if (usuarioEncontrado) {
-      // Salva informações do usuário logado
-      localStorage.setItem('inspectorApelido', usuarioEncontrado.apelido);
-      localStorage.setItem('inspectorNome', usuarioEncontrado.nome);
-      localStorage.setItem('inspectorRole', usuarioEncontrado.funcao);
-      sessionStorage.setItem('inspectorApelido', usuarioEncontrado.apelido);
-      sessionStorage.setItem('inspectorNome', usuarioEncontrado.nome);
-      sessionStorage.setItem('inspectorRole', usuarioEncontrado.funcao);
-      
-      // Define variável global
-      window.currentUserRole = usuarioEncontrado.funcao;
-      window.currentUserName = usuarioEncontrado.nome;
-      window.currentUserApelido = usuarioEncontrado.apelido;
-      
-      // Fecha modal de login
-      if (window.modals && window.modals.login) {
-        window.modals.login.close();
-      }
-      
-      // Limpa campo de senha
-      if (passwordInput) {
-        passwordInput.value = '';
-      }
-      
-      // Esconde erro
-      if (errorEl) errorEl.style.display = 'none';
-      
-      // Atualiza UI para mostrar tela logada
-      showInspectorScreen(usuarioEncontrado);
-      
-      // Registra log de sucesso
-      registrarLog(usuarioEncontrado.apelido);
-      
-      console.log('✅ Login bem-sucedido:', usuarioEncontrado.nome);
-    } else {
-      // Login falhou
-      console.warn('⚠️ Login falhou: usuário/senha inválidos');
-      if (errorEl) {
-        errorEl.textContent = 'Senha incorreta!';
-        errorEl.style.display = 'block';
-      }
-    }
-  } catch (err) {
-    console.error('❌ Erro no login:', err);
-    if (errorEl) {
-      errorEl.textContent = 'Erro de conexão. Tente novamente.';
-      errorEl.style.display = 'block';
-    }
-  }
-}
-
-/**
- * Mostra a tela do inspetor após login bem-sucedido
- */
-function showInspectorScreen(usuario) {
-  const mainScreen = getEl('main-screen');
-  const inspectorScreen = getEl('inspector-screen');
-  
-  if (mainScreen) mainScreen.style.display = 'none';
-  if (inspectorScreen) inspectorScreen.style.display = 'block';
-  
-  // Preenche campos com dados do usuário
-  const fiscalField = getEl('fiscal');
-  const envioResponsavel = getEl('envio-responsavel');
-  
-  if (fiscalField) fiscalField.value = usuario.nome;
-  if (envioResponsavel) envioResponsavel.value = usuario.nome;
-  
-  // Mostra toast de boas-vindas
-  const toastName = getEl('toast-name');
-  if (toastName) toastName.textContent = usuario.nome.split(' ')[0]; // Primeiro nome
-  
-  const welcomeToast = getEl('welcome-toast');
-  if (welcomeToast) {
-    welcomeToast.style.display = 'flex';
-    setTimeout(() => {
-      welcomeToast.style.display = 'none';
-    }, 5000);
-  }
-  
-  // Mostra botões específicos baseados na função
-  updateUIByRole(usuario.funcao);
-}
-
-/**
- * Atualiza a UI baseado no papel do usuário
- */
-function updateUIByRole(role) {
-  const btnInspecaoVeicular = getEl('btn-inspecao-veicular');
-  const btnEnvioInformacoes = getEl('btn-envio-informacoes');
-  const btnPainelAdmin = getEl('btn-painel-admin');
-  
-  // Mostra botões baseado na função
-  if (btnInspecaoVeicular) {
-    btnInspecaoVeicular.style.display = (role === 'FISCAL' || role === 'INSPETOR' || role === 'PLANTONISTA') ? 'block' : 'none';
-  }
-  
-  if (btnEnvioInformacoes) {
-    btnEnvioInformacoes.style.display = (role === 'FISCAL' || role === 'INSPETOR' || role === 'PLANTONISTA' || role === 'ENCARREGADO') ? 'block' : 'none';
-  }
-  
-  if (btnPainelAdmin) {
-    btnPainelAdmin.style.display = (role === 'ADMIN') ? 'block' : 'none';
-  }
-}
-
-/**
- * Verifica status do login ao carregar a página
- */
-function checkLoginStatus() {
-  const apelido = localStorage.getItem('inspectorApelido') || sessionStorage.getItem('inspectorApelido');
-  const nome = localStorage.getItem('inspectorNome') || sessionStorage.getItem('inspectorNome');
-  const role = localStorage.getItem('inspectorRole') || sessionStorage.getItem('inspectorRole');
-  
-  if (apelido && nome && role) {
-    // Usuário já estava logado
-    window.currentUserRole = role;
-    window.currentUserName = nome;
-    window.currentUserApelido = apelido;
-    
-    showInspectorScreen({ apelido, nome, funcao: role });
-  }
-}
-
-/**
- * Faz logout do usuário
- */
-function logoutInspector() {
-  // Limpa dados de sessão
-  localStorage.removeItem('inspectorApelido');
-  localStorage.removeItem('inspectorNome');
-  localStorage.removeItem('inspectorRole');
-  sessionStorage.removeItem('inspectorApelido');
-  sessionStorage.removeItem('inspectorNome');
-  sessionStorage.removeItem('inspectorRole');
-  
-  // Limpa variáveis globais
-  window.currentUserRole = null;
-  window.currentUserName = null;
-  window.currentUserApelido = null;
-  
-  // Volta para tela inicial
-  const mainScreen = getEl('main-screen');
-  const inspectorScreen = getEl('inspector-screen');
-  
-  if (mainScreen) mainScreen.style.display = 'block';
-  if (inspectorScreen) inspectorScreen.style.display = 'none';
-  
-  // Limpa campos
-  const fiscalField = getEl('fiscal');
-  const envioResponsavel = getEl('envio-responsavel');
-  
-  if (fiscalField) fiscalField.value = '';
-  if (envioResponsavel) envioResponsavel.value = '';
-  
-  console.log('👋 Logout realizado com sucesso');
-}
-
-// Exportar funções de login para escopo global
-window.login = login;
+window.currentUserRole = currentUserRole;
+window.canCreateInspection = canCreateInspection;
 window.checkLoginStatus = checkLoginStatus;
+window.login = login;
 window.logoutInspector = logoutInspector;
-window.showInspectorScreen = showInspectorScreen;
-window.updateUIByRole = updateUIByRole;
+window.ajustarCardsPorPerfil = ajustarCardsPorPerfil;
+window.mostrarBannerAviso = mostrarBannerAviso;
+window.aplicarBloqueioDeDatas = aplicarBloqueioDeDatas;
+window.resetInactivityTimer = resetInactivityTimer;
+window.setupInactivityListeners = setupInactivityListeners;
+window.carregarTimeoutInatividade = carregarTimeoutInatividade;
