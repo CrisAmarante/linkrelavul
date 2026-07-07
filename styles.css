@@ -34,11 +34,13 @@ body.dark::before { filter: blur(10px) brightness(0.85); }
 .logout-btn { margin: 30px auto 20px auto; min-width: 160px; padding: 14px 32px; font-size: 1.08rem; background: #d11a2d; color: white; border: none; border-radius: 50px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.25); transition: all 0.2s; display: flex; flex-direction: column; align-items: center; gap: 4px; line-height: 1.2; }
 .logout-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 14px rgba(0,0,0,0.3); }
 .logout-btn small { font-size: 0.75rem; font-weight: 400; opacity: 0.9; }
-#welcome-toast { position: fixed; top: 70px; left: 50%; transform: translateX(-50%); background: var(--modal-bg); backdrop-filter: blur(12px); border-radius: 16px; box-shadow: 0 8px 25px rgba(0,0,0,0.3); padding: 14px 28px; max-width: 300px; width: auto; min-width: 200px; text-align: center; font-size: 1.1rem; line-height: 1.4; font-weight: 500; color: var(--text); z-index: 11000; display: none; align-items: center; justify-content: center; gap: 8px; opacity: 0; transition: opacity 0.3s ease; white-space: nowrap; flex-wrap: wrap; }
+#welcome-toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: var(--modal-bg); backdrop-filter: blur(12px); border-radius: 16px; box-shadow: 0 8px 25px rgba(0,0,0,0.3); padding: 14px 28px; max-width: 300px; width: auto; min-width: 200px; text-align: center; font-size: 1.1rem; line-height: 1.4; font-weight: 500; color: var(--text); z-index: 11000; display: none; align-items: center; justify-content: center; gap: 8px; opacity: 0; transition: opacity 0.3s ease; white-space: nowrap; flex-wrap: wrap; }
 #welcome-toast.show { display: flex; opacity: 1; }
 #welcome-toast .toast-name { color: var(--accent); font-weight: 600; }
+/* Toast posicionado abaixo dos botões */
+.welcome-toast-below { bottom: 20px !important; }
 .toast-close { background: none; border: none; font-size: 1.4rem; color: var(--accent); cursor: pointer; padding: 0 4px; line-height: 1; }
-@media (max-width: 480px) { #welcome-toast { top: 65px; padding: 10px 18px; font-size: 0.95rem; max-width: 260px; white-space: normal; } }
+@media (max-width: 480px) { #welcome-toast { bottom: 70px; padding: 10px 18px; font-size: 0.95rem; max-width: 260px; white-space: normal; } .welcome-toast-below { bottom: 10px !important; } }
 @media (max-width: 480px) { .screen-container, #inspector-screen { padding: 15px 12px; } .cards-grid { gap: 12px; } .card, .inspector-card { width: calc(50% - 8px); min-width: 130px; min-height: 110px; font-size: 0.75rem; padding: 10px 6px; border-radius: 14px; } .card-icon { font-size: 1.5rem; margin-bottom: 6px; } .logout-btn { margin: 20px auto 15px auto; padding: 12px 24px; font-size: 0.95rem; min-width: 140px; } .logout-btn small { font-size: 0.7rem; } .titulo { padding: 10px 0; font-size: 1.2rem; } }
 @media (min-width: 481px) and (max-width: 768px) { .screen-container, #inspector-screen { padding: 20px 16px; } .cards-grid { gap: 14px; } .card, .inspector-card { width: calc(50% - 10px); min-width: 150px; min-height: 115px; font-size: 0.8rem; padding: 12px 8px; } .card-icon { font-size: 1.65rem; } }
 @media (min-width: 769px) { .screen-container, #inspector-screen { padding: 30px 20px; } .cards-grid { gap: 20px; max-width: 700px; } .card, .inspector-card { width: calc(33.333% - 14px); min-width: 160px; min-height: 130px; font-size: 0.9rem; } .card-icon { font-size: 2rem; } }
@@ -488,4 +490,381 @@ body.dark .grid-anexos-preview {
 
 .btn-admin:hover {
   transform: scale(1.05);
+}
+
+/* Painel Lateral de Notificações (SAF/Encarregado) */
+.painel-notificacoes {
+  position: fixed;
+  top: 70px;
+  left: 10px;
+  width: 280px;
+  max-height: calc(100vh - 90px);
+  background: var(--modal-bg);
+  backdrop-filter: blur(12px);
+  border-radius: 16px;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+  padding: 16px;
+  z-index: 999;
+  overflow-y: auto;
+  border: 2px solid var(--accent);
+  display: none;
+}
+
+.painel-notificacoes.visivel {
+  display: block;
+}
+
+.painel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+.painel-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.badge-nao-lidos {
+  background: var(--accent);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: bold;
+  padding: 2px 8px;
+  border-radius: 12px;
+  min-width: 20px;
+  text-align: center;
+}
+
+.lista-notificacoes {
+  max-height: 300px;
+  overflow-y: auto;
+  margin-bottom: 12px;
+}
+
+.notificacao-item {
+  background: rgba(0,0,0,0.05);
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-left: 3px solid var(--accent);
+}
+
+.notificacao-item:hover {
+  background: rgba(0,0,0,0.1);
+  transform: translateX(4px);
+}
+
+.notificacao-item.lido {
+  opacity: 0.6;
+  border-left-color: #10b981;
+}
+
+.notificacao-motivo {
+  font-weight: bold;
+  font-size: 0.85rem;
+  margin-bottom: 4px;
+}
+
+.notificacao-detalhes {
+  font-size: 0.75rem;
+  color: var(--text);
+  opacity: 0.8;
+}
+
+.sem-notificacoes {
+  text-align: center;
+  color: #666;
+  font-size: 0.85rem;
+  padding: 20px 0;
+}
+
+.btn-marcar-lidos {
+  width: 100%;
+  padding: 10px;
+  background: #10b981;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-marcar-lidos:hover {
+  background: #059669;
+  transform: translateY(-2px);
+}
+
+@media (max-width: 768px) {
+  .painel-notificacoes {
+    position: relative;
+    top: 0;
+    left: 0;
+    width: 100%;
+    max-height: none;
+    margin-bottom: 20px;
+  }
+  
+  .lista-notificacoes {
+    max-height: 200px;
+  }
+}
+
+/* Estilos adicionais para o Painel Admin */
+.admin-section {
+  background: var(--card-bg);
+  padding: 15px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  border: 1px solid rgba(0,0,0,0.1);
+}
+
+.admin-section h4 {
+  margin-bottom: 12px;
+  color: var(--accent);
+  font-size: 0.9rem;
+}
+
+.admin-botao-item {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+  align-items: center;
+}
+
+.admin-input-texto,
+.admin-input-url,
+.edit-botao-texto,
+.edit-botao-url {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.85rem;
+}
+
+.btn-admin-add,
+.btn-admin-remove {
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: all 0.2s;
+}
+
+.btn-admin-add {
+  background: var(--accent);
+  color: white;
+  margin-top: 10px;
+}
+
+.btn-admin-add:hover {
+  opacity: 0.9;
+}
+
+.btn-admin-remove {
+  background: #ef4444;
+  color: white;
+}
+
+.btn-admin-remove:hover {
+  background: #dc2626;
+}
+
+.admin-actions {
+  margin-top: 20px;
+  text-align: right;
+}
+
+.admin-info {
+  font-size: 0.8rem;
+  color: #666;
+  margin-top: 8px;
+}
+
+.botao-item {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+  align-items: center;
+}
+
+.admin-tab-content {
+  padding: 20px;
+}
+
+.admin-tab-content h3 {
+  margin-bottom: 20px;
+  color: var(--text);
+}
+
+/* Estilos para a tabela de usuários */
+.usuarios-search-bar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.usuarios-search-bar input {
+  flex: 1;
+  padding: 10px 14px;
+  border: 2px solid #cbd5e1;
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+.admin-usuarios-tabela {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--card-bg);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  margin-bottom: 20px;
+}
+
+.admin-usuarios-tabela th {
+  background: var(--accent);
+  color: white;
+  padding: 12px 8px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  text-align: left;
+}
+
+.admin-usuarios-tabela td {
+  padding: 12px 8px;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 0.85rem;
+  vertical-align: middle;
+}
+
+.admin-usuarios-tabela tr:last-child td {
+  border-bottom: none;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.status-badge.ativo {
+  background: #d1fae5;
+  color: #059669;
+}
+
+.status-badge.inativo {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.btn-admin-action {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+  background: transparent;
+  margin-right: 4px;
+}
+
+.btn-admin-action:hover {
+  transform: scale(1.1);
+}
+
+.btn-admin-action.btn-delete:hover {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* Modal de usuário */
+#form-admin-usuario .form-group {
+  margin-bottom: 16px;
+}
+
+#form-admin-usuario label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--text);
+  font-size: 0.85rem;
+}
+
+#form-admin-usuario input[type="text"],
+#form-admin-usuario input[type="password"] {
+  width: 100%;
+  padding: 10px 12px;
+  border: 2px solid #cbd5e1;
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+#form-admin-usuario input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+/* Botões de ícone no formulário de usuário */
+#form-admin-usuario .btn-icon {
+  padding: 8px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#form-admin-usuario .btn-icon:hover {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+@media (max-width: 480px) {
+  .usuarios-search-bar {
+    flex-direction: column;
+  }
+  
+  .admin-usuarios-tabela {
+    font-size: 0.75rem;
+  }
+  
+  .admin-usuarios-tabela th,
+  .admin-usuarios-tabela td {
+    padding: 8px 4px;
+  }
+  
+  .btn-admin-action {
+    padding: 4px 8px;
+    font-size: 0.8rem;
+  }
 }
