@@ -204,14 +204,22 @@ async function login(e) {
   const errorEl = getEl('login-error');
   const senha = passwordInput ? passwordInput.value.trim() : '';
   
+  console.log('🔐 Tentativa de login iniciada...');
+  
   if (!senha) {
-    if (errorEl) errorEl.style.display = 'block';
+    console.warn('⚠️ Senha vazia');
+    if (errorEl) {
+      errorEl.textContent = 'Digite sua senha!';
+      errorEl.style.display = 'block';
+    }
     return;
   }
   
   try {
     // Busca os inspetores atualizados
+    console.log('📡 Buscando inspetores...');
     await refreshInspetores();
+    console.log('✅ Inspetores carregados:', Object.keys(INSPETORES).length);
     
     let usuarioEncontrado = null;
     
@@ -219,6 +227,7 @@ async function login(e) {
     // O hash é calculado usando senha + apelido como salt (mesmo método do backend)
     for (const [apelido, dados] of Object.entries(INSPETORES)) {
       const hashedPassword = await hashPassword(senha, apelido);
+      console.log('🔍 Testando apelido:', apelido, '| Hash calculado:', hashedPassword.substring(0, 10) + '...', '| Hash armazenado:', dados.hash.substring(0, 10) + '...');
       
       if (dados.hash === hashedPassword || dados.hash === senha) {
         usuarioEncontrado = {
@@ -226,18 +235,21 @@ async function login(e) {
           nome: dados.nome,
           funcao: dados.funcao
         };
+        console.log('✅ Usuário encontrado localmente:', apelido);
         break;
       }
     }
     
     // Se não encontrou localmente, tenta fazer login via API
     if (!usuarioEncontrado) {
+      console.log('🌐 Tentando login via API...');
       const response = await fetch(`${URL_PLANILHA}?acao=login&senha=${encodeURIComponent(senha)}&apelido=_any_`, {
         method: 'GET',
         headers: { 'Accept': 'application/json' }
       });
       
       const result = await response.json();
+      console.log('📩 Resposta da API:', result);
       
       if (result && result.sucesso) {
         usuarioEncontrado = {
@@ -284,8 +296,11 @@ async function login(e) {
       console.log('✅ Login bem-sucedido:', usuarioEncontrado.nome);
     } else {
       // Login falhou
-      if (errorEl) errorEl.style.display = 'block';
       console.warn('⚠️ Login falhou: usuário/senha inválidos');
+      if (errorEl) {
+        errorEl.textContent = 'Senha incorreta!';
+        errorEl.style.display = 'block';
+      }
     }
   } catch (err) {
     console.error('❌ Erro no login:', err);
