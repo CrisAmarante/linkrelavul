@@ -1,1 +1,1 @@
-const URL_PLANILHA = "https://script.google.com/macros/s/AKfycbxBm7rRqnJpVUQBPEueBIFoI7tgkj2Eyj7luzuHJeUXIW18dLrC-5KbLVz1dQQWeuyQ/exec";
+const URL_PLANILHA = "https://script.google.com/macros/s/AKfycbyeo5cNYYFRmWgDLm-lgNk1J-zWAPGFt6PK09IJgI0--KHZpg4QzXxUs01GWhLmlpIO/exec";
