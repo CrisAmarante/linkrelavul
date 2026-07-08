@@ -284,9 +284,19 @@ class AdminPanelController {
   open() {
     if (!this.init()) return;
     
+    // Verificação rigorosa: apenas usuários ADMIN podem acessar
     const role = window.currentUserRole || localStorage.getItem('inspectorRole');
+    
+    // Validação explícita: deve ser exatamente 'ADMIN' (case-sensitive)
     if (role !== 'ADMIN') {
+      console.warn('⛔ Tentativa de acesso não autorizado ao painel ADMIN. Função do usuário:', role);
       alert('⛔ Acesso restrito a administradores.');
+      
+      // Força logout se tentar acessar sem permissão
+      if (role && role !== 'ADMIN') {
+        console.error('Usuário com função ' + role + ' tentou acessar painel ADMIN. Acessos não autorizados serão registrados.');
+      }
+      
       return;
     }
     
