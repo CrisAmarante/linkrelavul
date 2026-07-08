@@ -67,6 +67,18 @@ function initEventListeners() {
     abrirModalEnvio(); 
   });
   
+  // Painel Admin - apenas para usuários ADMIN
+  getEl('btn-painel-admin')?.addEventListener('click', (e) => { 
+    e.preventDefault(); 
+    const role = window.currentUserRole || localStorage.getItem('inspectorRole');
+    if (role !== 'ADMIN') {
+      console.warn('⛔ Tentativa de acesso não autorizado ao painel ADMIN. Função:', role);
+      alert('⛔ Acesso restrito a administradores.');
+      return;
+    }
+    abrirModalAdmin(); 
+  });
+  
   getEl('btn-salvar-rascunho')?.addEventListener('click', salvarRascunho);
   getEl('btn-enviar-relatorio')?.addEventListener('click', enviarRelatorio);
   getEl('btn-consultar-envios')?.addEventListener('click', consultarEnvios);
