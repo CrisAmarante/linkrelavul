@@ -60,7 +60,6 @@ async function checkLoginStatus() {
     
     currentUserRole = role;
     canCreateInspection = (role === 'FISCAL' || role === 'INSPETOR');
-    atualizarReferenciasGlobais();
     
     // Mostra/oculta cards especiais
     if (btnInspecao && role !== 'MONITOR') btnInspecao.style.display = 'flex';
@@ -184,12 +183,6 @@ function logoutInspector() {
   localStorage.removeItem('inspectorName');
   localStorage.removeItem('inspectorApelido');
   localStorage.removeItem('inspectorRole');
-  
-  // Reseta variáveis de autenticação
-  currentUserRole = '';
-  canCreateInspection = false;
-  atualizarReferenciasGlobais();
-  
   checkLoginStatus();
 }
 
@@ -319,9 +312,3 @@ window.aplicarBloqueioDeDatas = aplicarBloqueioDeDatas;
 window.resetInactivityTimer = resetInactivityTimer;
 window.setupInactivityListeners = setupInactivityListeners;
 window.carregarTimeoutInatividade = carregarTimeoutInatividade;
-
-// Atualizar referência global após login/logout
-function atualizarReferenciasGlobais() {
-  window.currentUserRole = currentUserRole;
-  window.canCreateInspection = canCreateInspection;
-}
