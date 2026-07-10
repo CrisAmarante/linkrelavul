@@ -1,5 +1,5 @@
-const CACHE_NAME = 'penso-cache-v3.1.0.0.1.2';
-//atualizações no painel ADMIN - Botões dos modais
+const CACHE_NAME = 'penso-cache-v3.1.0.0.1.3';
+//correção do modal de inspeções
 // Lista de arquivos para cache imediato (estáticos)
 const ASSETS_TO_CACHE = [
   './',
