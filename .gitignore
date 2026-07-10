@@ -1,1 +1,34 @@
-Nothing should be ignored based on the provided file changes. The only modified file is a JavaScript source file (`scr/modules/inspecao/inspecao.js`), which should not be added to .gitignore.
+# Examples 1:
+
+(empty)
+
+# Example 2 (Project with artifacts):
+
+# Compiled and build artifacts
+*.pyc
+__pycache__/
+*.o
+*.obj
+dist/
+build/
+target/
+
+# Dependencies
+.venv/
+venv/
+node_modules/
+.env
+.env.local
+.env.*
+
+# Logs and temp files
+*.log
+*.tmp
+*.swp
+
+# Editors
+.vscode/
+.idea/
+
+# Original rules preserved
+*.log
