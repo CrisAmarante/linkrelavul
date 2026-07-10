@@ -276,6 +276,10 @@ function mostrarModalConferir(inspecoes, userRole, params) {
   }
   titulo.textContent = tituloTexto;
   
+  // Perfis que podem exportar inspeções (todos exceto FISCAL e SAF)
+  const perfisPodemExportar = ['ENCARREGADO', 'GERENTE', 'PLANTONISTA', 'ADMIN', 'INSPETOR'];
+  const podeExportar = perfisPodemExportar.includes(userRole);
+  
   if (!inspecoes || inspecoes.length === 0) {
     lista.innerHTML = '<p style="text-align:center;padding:20px;">Nenhuma inspeção encontrada.</p>';
   } else {
@@ -304,10 +308,44 @@ function mostrarModalConferir(inspecoes, userRole, params) {
     });
     
     html += '</tbody></table>';
+    
+    // Adiciona botão de exportar se o perfil permitir
+    if (podeExportar) {
+      html += `
+        <div style="margin-top: 20px; text-align: center;">
+          <button id="btn-exportar-inspecoes-pdf" class="btn-principal" style="margin: 5px;">📄 Exportar PDF</button>
+          <button id="btn-exportar-inspecoes-excel" class="btn-secundario" style="margin: 5px;">📊 Exportar Excel</button>
+        </div>
+      `;
+    }
+    
     lista.innerHTML = html;
+    
+    // Armazena as inspeções para exportação
+    window._inspecoesParaExportar = inspecoes;
   }
   
   modal.style.display = 'flex';
+  
+  // Configura os eventos dos botões de exportação
+  if (podeExportar && inspecoes && inspecoes.length > 0) {
+    setTimeout(() => {
+      const btnPDF = document.getElementById('btn-exportar-inspecoes-pdf');
+      const btnExcel = document.getElementById('btn-exportar-inspecoes-excel');
+      
+      if (btnPDF) {
+        const novoBtnPDF = btnPDF.cloneNode(true);
+        btnPDF.parentNode.replaceChild(novoBtnPDF, btnPDF);
+        novoBtnPDF.addEventListener('click', () => exportarInspecoesPDF(inspecoes));
+      }
+      
+      if (btnExcel) {
+        const novoBtnExcel = btnExcel.cloneNode(true);
+        btnExcel.parentNode.replaceChild(novoBtnExcel, btnExcel);
+        novoBtnExcel.addEventListener('click', () => exportarInspecoesExcel(inspecoes));
+      }
+    }, 100);
+  }
 }
 
 /**
@@ -322,4 +360,162 @@ function fecharModalConferir() {
 window.mostrarModalConferir = mostrarModalConferir;
 window.fecharModalConferir = fecharModalConferir;
 
+/**
+ * Exporta inspeções para PDF
+ */
+async function exportarInspecoesPDF(inspecoes) {
+  try {
+    if (typeof window.jspdf === 'undefined') {
+      const script = document.createElement('script');
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+      document.head.appendChild(script);
+      await new Promise(resolve => { script.onload = resolve; });
+      await new Promise(resolve => setTimeout(resolve, 150));
+    }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 15;
+    let y = 20;
+
+    // Cabeçalho
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.text("RELATÓRIO DE INSPEÇÕES VEICULARES", pageWidth / 2, y, { align: "center" });
+    
+    y += 8;
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    const dataGeracao = new Date().toLocaleString('pt-BR');
+    doc.text(`Gerado em: ${dataGeracao}`, pageWidth / 2, y, { align: "center" });
+    
+    y += 10;
+    doc.setFontSize(9);
+    doc.text(`Total de inspeções: ${inspecoes.length}`, margin, y);
+    
+    y += 8;
+
+    // Configurações da tabela
+    const colWidths = [25, 20, 35, 35, 25, 25, 25, 30];
+    const headers = ['Data', 'Carro', 'Terminal', 'Fiscal', 'THOREB', 'Elevador', 'Limpeza', 'Ventilador'];
+    const lineHeight = 6;
+    
+    // Desenha cabeçalho da tabela
+    doc.setFont("helvetica", "bold");
+    doc.setFillColor(240, 240, 240);
+    doc.rect(margin, y - 4, pageWidth - margin * 2, 6, 'F');
+    
+    let x = margin;
+    headers.forEach((header, i) => {
+      doc.text(header, x, y);
+      x += colWidths[i];
+    });
+    
+    y += 2;
+    doc.line(margin, y, pageWidth - margin, y);
+    y += lineHeight;
+    
+    // Desenha linhas de dados
+    doc.setFont("helvetica", "normal");
+    inspecoes.forEach((insp, idx) => {
+      if (y > 250) {
+        doc.addPage();
+        y = 20;
+      }
+      
+      x = margin;
+      const data = insp.dataPreenchimento || '';
+      const carro = insp.carro || '';
+      const terminal = insp.terminal || '';
+      const fiscal = insp.fiscal || '';
+      const thoreb = insp.thoreb?.status || '';
+      const elevador = insp.elevador?.status || '';
+      const limpeza = insp.limpeza?.status || '';
+      let ventilador = insp.ventilador?.status || '';
+      if (insp.ventilador?.posicao) ventilador += ` (${insp.ventilador.posicao})`;
+      
+      doc.text(data.substring(0, 10), x, y);
+      x += colWidths[0];
+      doc.text(carro, x, y);
+      x += colWidths[1];
+      doc.text(terminal.substring(0, 15), x, y);
+      x += colWidths[2];
+      doc.text(fiscal.substring(0, 15), x, y);
+      x += colWidths[3];
+      doc.text(thoreb, x, y);
+      x += colWidths[4];
+      doc.text(elevador, x, y);
+      x += colWidths[5];
+      doc.text(limpeza, x, y);
+      x += colWidths[6];
+      doc.text(ventilador.substring(0, 15), x, y);
+      
+      y += lineHeight;
+    });
+
+    const nomeArquivo = `inspecoes_${new Date().toISOString().split('T')[0]}.pdf`;
+    doc.save(nomeArquivo);
+    alert(`✅ PDF gerado com sucesso!\\n\\nNome do arquivo: ${nomeArquivo}`);
+  } catch (error) {
+    console.error("Erro ao gerar PDF:", error);
+    alert('❌ Erro ao gerar o PDF:\\n' + error.message);
+  }
+}
+
+/**
+ * Exporta inspeções para Excel (CSV)
+ */
+function exportarInspecoesExcel(inspecoes) {
+  try {
+    // Cabeçalhos CSV
+    const headers = ['Data', 'Carro', 'Terminal', 'Fiscal', 'THOREB_Status', 'THOREB_Obs', 'Elevador_Status', 'Elevador_Obs', 'Limpeza_Status', 'Limpeza_Obs', 'Ventilador_Status', 'Ventilador_Posicao', 'Ventilador_Obs'];
+    
+    // Converte dados para CSV
+    const csvRows = [];
+    csvRows.push(headers.join(';'));
+    
+    inspecoes.forEach(insp => {
+      const row = [
+        insp.dataPreenchimento || '',
+        insp.carro || '',
+        insp.terminal || '',
+        insp.fiscal || '',
+        insp.thoreb?.status || '',
+        (insp.thoreb?.obs || '').replace(/;/g, ','),
+        insp.elevador?.status || '',
+        (insp.elevador?.obs || '').replace(/;/g, ','),
+        insp.limpeza?.status || '',
+        (insp.limpeza?.obs || '').replace(/;/g, ','),
+        insp.ventilador?.status || '',
+        (insp.ventilador?.posicao || '').replace(/;/g, ','),
+        (insp.ventilador?.obs || '').replace(/;/g, ',')
+      ];
+      csvRows.push(row.join(';'));
+    });
+    
+    const csvContent = csvRows.join('
+');
+    
+    // Cria blob e faz download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `inspecoes_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    alert(`✅ Excel (CSV) gerado com sucesso!`);
+  } catch (error) {
+    console.error("Erro ao gerar Excel:", error);
+    alert('❌ Erro ao gerar o Excel:\\n' + error.message);
+  }
+}
+
 window.InspecaoVeicular = InspecaoVeicular;
+window.exportarInspecoesPDF = exportarInspecoesPDF;
+window.exportarInspecoesExcel = exportarInspecoesExcel;
