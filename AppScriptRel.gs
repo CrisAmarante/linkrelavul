@@ -162,8 +162,8 @@ function salvarInspecao(dadosJson) {
   return true;
 }
 
-// ======================= CONSULTAR INSPEÇÕES (com filtros e regras de negócio) =======================
-function consultarInspecoes(fiscalNome, dataInicio, dataFim, carro, fiscalFiltro, userRole) {
+// ======================= CONSULTAR INSPEÇÕES (com filtros) =======================
+function consultarInspecoes(fiscalNome, dataInicio, dataFim, carro, fiscalFiltro) {
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const sheet = ss.getSheetByName("Inspecoes_Veiculares");
@@ -229,28 +229,15 @@ function consultarInspecoes(fiscalNome, dataInicio, dataFim, carro, fiscalFiltro
       if (dataFimObj && dataRegistro > dataFimObj) continue;
       
       if (carro && linha[indices.carro] && !String(linha[indices.carro]).toLowerCase().includes(carro.toLowerCase())) continue;
-      
-      // Regra de negócio: filtrar por papel do usuário
-      // FISCAL: só vê as próprias inspeções
-      // INSPETOR: vê as próprias e de todos os fiscais
-      // ENCARGREGADO, GERENTE, PLANTONISTA, ADMIN: veem todas
-      if (userRole === 'FISCAL') {
-        if (fiscalNome && fiscalLinha !== fiscalNome) continue;
-      } else if (userRole === 'INSPETOR') {
-        // Inspetor vê todas as inspeções (próprias e dos fiscais)
-        if (fiscalFiltro && fiscalLinha !== fiscalFiltro) continue;
-      } else {
-        // ENCARGREGADO, GERENTE, PLANTONISTA, ADMIN veem todas
-        // Apenas aplica filtro se fiscalFiltro for explicitamente informado
-        if (fiscalFiltro && fiscalLinha !== fiscalFiltro) continue;
-      }
+      if (fiscalFiltro && fiscalLinha !== fiscalFiltro) continue;
+      if (fiscalNome && fiscalLinha !== fiscalNome) continue; 
       
       // Extrai apenas a data (dd/MM/yyyy) da dataHora para exibição como "data de preenchimento"
       const dataPreenchimento = dataHoraStr.split(" ")[0];
       
       resultados.push({
         dataHora: dataHoraStr,
-        dataPreenchimento: dataPreenchimento,
+        dataPreenchimento: dataPreenchimento,  // Nova propriedade: data de preenchimento pelo fiscal
         carro: linha[indices.carro] || "",
         terminal: linha[indices.terminal] || "",
         fiscal: fiscalLinha,
@@ -921,9 +908,8 @@ function doGet(e) {
       const dataFim = e.parameter.dataFim || null;
       const carro = e.parameter.carro || null;
       const fiscalFiltro = e.parameter.fiscalFiltro || null;
-      const userRole = e.parameter.userRole || null;
-      const resultado = consultarInspecoes(fiscal, dataInicio, dataFim, carro, fiscalFiltro, userRole);
-      LogModule.registrarAcesso(usuario, 'CONSULTA_INSPICOES', `userRole:${userRole||''},fiscal:${fiscal||''},dataInicio:${dataInicio||''},dataFim:${dataFim||''}`, endpoint, imei, localizacaoGps);
+      const resultado = consultarInspecoes(fiscal, dataInicio, dataFim, carro, fiscalFiltro);
+      LogModule.registrarAcesso(usuario, 'CONSULTA_INSPICOES', `fiscal:${fiscal||''},dataInicio:${dataInicio||''},dataFim:${dataFim||''}`, endpoint, imei, localizacaoGps);
       return enviarResposta(resultado);
     }
     // CONSULTAR ENVIOS  
