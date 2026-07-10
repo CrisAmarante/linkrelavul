@@ -59,7 +59,8 @@ async function checkLoginStatus() {
     }
     
     currentUserRole = role;
-    canCreateInspection = (role === 'FISCAL' || role === 'INSPETOR');
+    // Criação de inspeções: FISCAL, INSPETOR e ADMIN
+    canCreateInspection = (role === 'FISCAL' || role === 'INSPETOR' || role === 'ADMIN');
     
     // Mostra/oculta cards especiais
     if (btnInspecao && role !== 'MONITOR') btnInspecao.style.display = 'flex';

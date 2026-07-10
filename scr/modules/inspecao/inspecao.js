@@ -219,8 +219,20 @@ class InspecaoVeicular {
     if (carro) params.append('carro', carro);
     if (fiscalFiltro) params.append('fiscalFiltro', fiscalFiltro);
     
+    // Regras de consulta por perfil:
+    // - FISCAL: só consulta as próprias
+    // - INSPETOR: consulta as próprias e de todos os fiscais
+    // - ENCARREGADOS e ADMIN: consultam todas
     if (currentUserRole === 'FISCAL') {
       params.append('fiscal', localStorage.getItem('inspectorApelido') || localStorage.getItem('inspectorName'));
+    } else if (currentUserRole === 'INSPETOR') {
+      // Inspetor vê próprias e de fiscais - backend fará o filtro
+      params.append('papel', 'INSPETOR');
+      params.append('apelido', localStorage.getItem('inspectorApelido') || localStorage.getItem('inspectorName'));
+    } else if (currentUserRole === 'ENCARREGADO' || currentUserRole === 'ADMIN' || currentUserRole === 'GERENTE') {
+      // Consultam todas - backend permitirá tudo
+      params.append('papel', currentUserRole);
+      params.append('apelido', localStorage.getItem('inspectorApelido') || localStorage.getItem('inspectorName'));
     }
     
     return this._executarConsultaInspecao(params);

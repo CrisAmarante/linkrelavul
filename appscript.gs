@@ -163,7 +163,7 @@ function salvarInspecao(dadosJson) {
 }
 
 // ======================= CONSULTAR INSPEÇÕES (com filtros) =======================
-function consultarInspecoes(fiscalNome, dataInicio, dataFim, carro, fiscalFiltro) {
+function consultarInspecoes(fiscalNome, dataInicio, dataFim, carro, fiscalFiltro, papel, apelido) {
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const sheet = ss.getSheetByName("Inspecoes_Veiculares");
@@ -180,6 +180,19 @@ function consultarInspecoes(fiscalNome, dataInicio, dataFim, carro, fiscalFiltro
     if (dataFim) {
       const parts = dataFim.split('-');
       dataFimObj = new Date(parts[0], parts[1]-1, parts[2], 23, 59, 59);
+    }
+
+    // Carrega a planilha de login para obter os papéis de cada usuário
+    const loginSheet = ss.getSheetByName("login");
+    const loginData = loginSheet.getDataRange().getValues();
+    const fiscaisSet = new Set();     // apelidos com função 'FISCAL'
+    for (let i = 1; i < loginData.length; i++) {
+      const funcao = String(loginData[i][4] || "").trim().toUpperCase();
+      const apelidoLogin = loginData[i][2];
+      if (!apelidoLogin) continue;
+      if (funcao === 'FISCAL') {
+        fiscaisSet.add(apelidoLogin);
+      }
     }
 
     const cabecalhos = dados[0].map(h => String(h).trim());
@@ -230,22 +243,59 @@ function consultarInspecoes(fiscalNome, dataInicio, dataFim, carro, fiscalFiltro
       
       if (carro && linha[indices.carro] && !String(linha[indices.carro]).toLowerCase().includes(carro.toLowerCase())) continue;
       if (fiscalFiltro && fiscalLinha !== fiscalFiltro) continue;
-      if (fiscalNome && fiscalLinha !== fiscalNome) continue; 
       
-      // Extrai apenas a data (dd/MM/yyyy) da dataHora para exibição como "data de preenchimento"
-      const dataPreenchimento = dataHoraStr.split(" ")[0];
+      // ========== REGRAS DE PERMISSÃO POR PERFIL ==========\n      let permitido = false;
       
-      resultados.push({
-        dataHora: dataHoraStr,
-        dataPreenchimento: dataPreenchimento,  // Nova propriedade: data de preenchimento pelo fiscal
-        carro: linha[indices.carro] || "",
-        terminal: linha[indices.terminal] || "",
-        fiscal: fiscalLinha,
-        thoreb: { status: linha[indices.thoreb_status] || "", obs: linha[indices.thoreb_obs] || "" },
-        elevador: { status: linha[indices.elevador_status] || "", obs: linha[indices.elevador_obs] || "" },
-        limpeza: { status: linha[indices.limpeza_status] || "", obs: linha[indices.limpeza_obs] || "" },
-        ventilador: { status: linha[indices.ventilador_status] || "", obs: linha[indices.ventilador_obs] || "", posicao: linha[indices.ventilador_pos] || "" }
-      });
+      if (papel) {
+        switch (papel) {
+          case 'FISCAL':
+            // Fiscal vê apenas suas próprias inspeções
+            permitido = (fiscalLinha === apelido);
+            break;
+            
+          case 'INSPETOR':
+            // Inspetor vê:
+            // 1) Suas próprias inspeções
+            // 2) Inspeções de todos os FISCAIS
+            const isProprioInsp = (fiscalLinha === apelido);
+            const isFiscalInsp = fiscaisSet.has(fiscalLinha);
+            permitido = isProprioInsp || isFiscalInsp;
+            break;
+            
+          case 'ENCARREGADO':
+          case 'GERENTE':
+          case 'ADMIN':
+            // Encarregado, Gerente e Admin veem todas as inspeções
+            permitido = true;
+            break;
+            
+          default:
+            // Sem papel definido, usa filtro tradicional
+            if (fiscalNome && fiscalLinha !== fiscalNome) continue;
+            permitido = true;
+        }
+      } else {
+        // Sem papel definido, usa filtro tradicional
+        if (fiscalNome && fiscalLinha !== fiscalNome) continue;
+        permitido = true;
+      }
+      
+      if (permitido) {
+        // Extrai apenas a data (dd/MM/yyyy) da dataHora para exibição como "data de preenchimento"
+        const dataPreenchimento = dataHoraStr.split(" ")[0];
+        
+        resultados.push({
+          dataHora: dataHoraStr,
+          dataPreenchimento: dataPreenchimento,
+          carro: linha[indices.carro] || "",
+          terminal: linha[indices.terminal] || "",
+          fiscal: fiscalLinha,
+          thoreb: { status: linha[indices.thoreb_status] || "", obs: linha[indices.thoreb_obs] || "" },
+          elevador: { status: linha[indices.elevador_status] || "", obs: linha[indices.elevador_obs] || "" },
+          limpeza: { status: linha[indices.limpeza_status] || "", obs: linha[indices.limpeza_obs] || "" },
+          ventilador: { status: linha[indices.ventilador_status] || "", obs: linha[indices.ventilador_obs] || "", posicao: linha[indices.ventilador_pos] || "" }
+        });
+      }
     }
     return resultados;
   } catch (err) {
@@ -908,7 +958,9 @@ function doGet(e) {
       const dataFim = e.parameter.dataFim || null;
       const carro = e.parameter.carro || null;
       const fiscalFiltro = e.parameter.fiscalFiltro || null;
-      const resultado = consultarInspecoes(fiscal, dataInicio, dataFim, carro, fiscalFiltro);
+      const papel = e.parameter.papel || '';
+      const apelido = e.parameter.apelido || '';
+      const resultado = consultarInspecoes(fiscal, dataInicio, dataFim, carro, fiscalFiltro, papel, apelido);
       LogModule.registrarAcesso(usuario, 'CONSULTA_INSPICOES', `fiscal:${fiscal||''},dataInicio:${dataInicio||''},dataFim:${dataFim||''}`, endpoint, imei, localizacaoGps);
       return enviarResposta(resultado);
     }
