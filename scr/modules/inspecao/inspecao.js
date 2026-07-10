@@ -214,11 +214,13 @@ class InspecaoVeicular {
 
     const params = new URLSearchParams();
     params.append('acao', 'consultar_inspecoes');
+    params.append('userRole', currentUserRole);
     if (dataInicio) params.append('dataInicio', dataInicio);
     if (dataFim) params.append('dataFim', dataFim);
     if (carro) params.append('carro', carro);
     if (fiscalFiltro) params.append('fiscalFiltro', fiscalFiltro);
     
+    // FISCAL: só vê as próprias inspeções
     if (currentUserRole === 'FISCAL') {
       params.append('fiscal', localStorage.getItem('inspectorApelido') || localStorage.getItem('inspectorName'));
     }
@@ -253,5 +255,71 @@ class InspecaoVeicular {
     });
   }
 }
+
+/**
+ * Exibe o modal de conferência de inspeções
+ * @param {Array} inspecoes - Lista de inspeções retornadas
+ * @param {string} userRole - Papel do usuário atual
+ * @param {URLSearchParams} params - Parâmetros da consulta
+ */
+function mostrarModalConferir(inspecoes, userRole, params) {
+  const modal = document.getElementById('modal-conferir-inspecoes');
+  const lista = document.getElementById('lista-inspecoes');
+  const titulo = modal.querySelector('.modal-title');
+  
+  // Define título baseado no papel
+  let tituloTexto = '📋 Minhas Inspeções';
+  if (userRole === 'INSPETOR') {
+    tituloTexto = '📋 Inspeções (Todos os Fiscais)';
+  } else if (['ENCARREGADO', 'GERENTE', 'PLANTONISTA', 'ADMIN'].includes(userRole)) {
+    tituloTexto = '📋 Todas as Inspeções';
+  }
+  titulo.textContent = tituloTexto;
+  
+  if (!inspecoes || inspecoes.length === 0) {
+    lista.innerHTML = '<p style="text-align:center;padding:20px;">Nenhuma inspeção encontrada.</p>';
+  } else {
+    let html = '<table style="width:100%;border-collapse:collapse;"><thead><tr style="background:#f0f0f0;">';
+    html += '<th style="padding:10px;border:1px solid #ddd;">Data</th>';
+    html += '<th style="padding:10px;border:1px solid #ddd;">Carro</th>';
+    html += '<th style="padding:10px;border:1px solid #ddd;">Terminal</th>';
+    html += '<th style="padding:10px;border:1px solid #ddd;">Fiscal</th>';
+    html += '<th style="padding:10px;border:1px solid #ddd;">THOREB</th>';
+    html += '<th style="padding:10px;border:1px solid #ddd;">Elevador</th>';
+    html += '<th style="padding:10px;border:1px solid #ddd;">Limpeza</th>';
+    html += '<th style="padding:10px;border:1px solid #ddd;">Ventilador</th>';
+    html += '</tr></thead><tbody>';
+    
+    inspecoes.forEach(insp => {
+      html += '<tr>';
+      html += `<td style="padding:8px;border:1px solid #ddd;">${insp.dataPreenchimento || ''}</td>`;
+      html += `<td style="padding:8px;border:1px solid #ddd;">${insp.carro || ''}</td>`;
+      html += `<td style="padding:8px;border:1px solid #ddd;">${insp.terminal || ''}</td>`;
+      html += `<td style="padding:8px;border:1px solid #ddd;">${insp.fiscal || ''}</td>`;
+      html += `<td style="padding:8px;border:1px solid #ddd;">${insp.thoreb?.status || ''}${insp.thoreb?.obs ? ' (' + insp.thoreb.obs + ')' : ''}</td>`;
+      html += `<td style="padding:8px;border:1px solid #ddd;">${insp.elevador?.status || ''}${insp.elevador?.obs ? ' (' + insp.elevador.obs + ')' : ''}</td>`;
+      html += `<td style="padding:8px;border:1px solid #ddd;">${insp.limpeza?.status || ''}${insp.limpeza?.obs ? ' (' + insp.limpeza.obs + ')' : ''}</td>`;
+      html += `<td style="padding:8px;border:1px solid #ddd;">${insp.ventilador?.status || ''}${insp.ventilador?.obs ? ' (' + insp.ventilador.obs + ')' : ''}${insp.ventilador?.posicao ? ' (Pos: ' + insp.ventilador.posicao + ')' : ''}</td>`;
+      html += '</tr>';
+    });
+    
+    html += '</tbody></table>';
+    lista.innerHTML = html;
+  }
+  
+  modal.style.display = 'flex';
+}
+
+/**
+ * Fecha o modal de conferência de inspeções
+ */
+function fecharModalConferir() {
+  const modal = document.getElementById('modal-conferir-inspecoes');
+  if (modal) modal.style.display = 'none';
+}
+
+// Exporta para escopo global
+window.mostrarModalConferir = mostrarModalConferir;
+window.fecharModalConferir = fecharModalConferir;
 
 window.InspecaoVeicular = InspecaoVeicular;
