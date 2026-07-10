@@ -254,4 +254,47 @@ class InspecaoVeicular {
   }
 }
 
+// Função para mostrar o modal de conferência de inspeções
+function mostrarModalConferir(dados, role, params) {
+  const modal = getEl('modal-conferir-inspecoes');
+  const lista = getEl('lista-inspecoes');
+  
+  if (!modal || !lista) {
+    alert('Modal de conferência não encontrado.');
+    return;
+  }
+  
+  if (!dados || dados.length === 0) {
+    lista.innerHTML = '<p style="text-align: center; padding: 20px;">Nenhuma inspeção encontrada.</p>';
+  } else {
+    let html = '<table class="tabela-inspecoes" style="width: 100%; border-collapse: collapse;">';
+    html += '<thead><tr style="background: #f0f0f0;"><th style="padding: 10px; text-align: left;">Data</th><th style="padding: 10px; text-align: left;">Carro</th><th style="padding: 10px; text-align: left;">Terminal</th><th style="padding: 10px; text-align: left;">Fiscal</th></tr></thead>';
+    html += '<tbody>';
+    
+    dados.forEach(item => {
+      html += `<tr style="border-bottom: 1px solid #ddd;">`;
+      html += `<td style="padding: 10px;">${item.data || '-'}</td>`;
+      html += `<td style="padding: 10px;">${item.carro || '-'}</td>`;
+      html += `<td style="padding: 10px;">${item.terminal || '-'}</td>`;
+      html += `<td style="padding: 10px;">${item.fiscal || '-'}</td>`;
+      html += `</tr>`;
+    });
+    
+    html += '</tbody></table>';
+    lista.innerHTML = html;
+  }
+  
+  modal.style.display = 'flex';
+}
+
+// Função para fechar o modal de conferência
+function fecharModalConferir() {
+  const modal = getEl('modal-conferir-inspecoes');
+  if (modal) {
+    modal.style.display = 'none';
+  }
+}
+
 window.InspecaoVeicular = InspecaoVeicular;
+window.mostrarModalConferir = mostrarModalConferir;
+window.fecharModalConferir = fecharModalConferir;
