@@ -514,26 +514,48 @@ function formatarDataRaw(valor) {
   }
 }
 
-// ======================= SALVAR ENVIO DE INFORMAÇÕES =======================
+// ====================================================================
+// SALVAR ENVIO DE INFORMAÇÕES
+// ====================================================================
+/**
+ * Salva as informações de envio na planilha.
+ * CORREÇÃO: Captura a 'dataPreenchimento' original do front-end e 
+ * armazena em uma nova coluna para evitar divergência de fuso/sincronização.
+ */
 function salvarEnvioInformacoes(dadosJson) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   let sheet = ss.getSheetByName("EnviosInformacoes");
+  
   if (!sheet) {
+    // Cria a aba já com a nova coluna 'DataPreenchimento' se não existir
     sheet = ss.insertSheet("EnviosInformacoes");
     sheet.appendRow([
       "DataHora", "Fiscal", "AreaDestino", "Motivo", "Carro", "Linha",
-      "Motorista", "Cobrador", "Hora", "Sentido", "Historico", "Local", "Data", "Anexos"
+      "Motorista", "Cobrador", "Hora", "Sentido", "Historico", "Local", 
+      "Data", "Anexos", "DataPreenchimento"
     ]);
+  } else {
+    // Verifica se a coluna 'DataPreenchimento' já existe no cabeçalho; se não, cria dinamicamente.
+    const ultimaColuna = sheet.getLastColumn();
+    if (ultimaColuna > 0) {
+      const headers = sheet.getRange(1, 1, 1, ultimaColuna).getValues()[0];
+      if (headers.indexOf("DataPreenchimento") === -1) {
+        sheet.getRange(1, ultimaColuna + 1).setValue("DataPreenchimento");
+      }
+    }
   }
 
   const agora = Utilities.formatDate(new Date(), "America/Sao_Paulo", "dd/MM/yyyy HH:mm:ss");
-  const { areaDestino, motivo, carro, linha, motorista, cobrador, hora, sentido, historico, local, data, fiscal, anexos } = dadosJson;
+  
+  // Extraímos o dataPreenchimento enviado pelo front-end
+  const { areaDestino, motivo, carro, linha, motorista, cobrador, hora, sentido, historico, local, data, fiscal, anexos, dataPreenchimento } = dadosJson;
   
   // ========== TRUNCA O HISTÓRICO ANTES DE SALVAR ==========
   const historicoTruncado = truncarTexto(historico || '');
 
   let linksAnexos = [];
 
+  // Processamento e salvamento de anexos no Google Drive
   if (anexos && Array.isArray(anexos) && anexos.length) {
     const pasta = DriveApp.getFolderById(CONFIG.ID_PASTA_ANEXOS);
     for (let i = 0; i < anexos.length; i++) {
@@ -554,15 +576,26 @@ function salvarEnvioInformacoes(dadosJson) {
   }
 
   const linkFinal = linksAnexos.join(" ; ");
+  const dataPreenchimentoFront = dataPreenchimento || ""; // Garante string vazia se não vier
+
+  // Adiciona a linha na planilha, incluindo a DataPreenchimento na última posição
   sheet.appendRow([
     agora, fiscal, areaDestino, motivo, carro, linha,
-    motorista, cobrador, hora, sentido, historicoTruncado, local, data, linkFinal
+    motorista, cobrador, hora, sentido, historicoTruncado, local, data, linkFinal, dataPreenchimentoFront
   ]);
 
   return true;
 }
 
-// ======================= CONSULTAR ENVIOS COM PERMISSÕES AVANÇADAS =======================
+
+// ====================================================================
+// CONSULTAR ENVIOS COM PERMISSÕES AVANÇADAS
+// ====================================================================
+/**
+ * Consulta os envios aplicando filtros.
+ * CORREÇÃO: Lê a 'DataPreenchimento' original da planilha. Em casos de 
+ * relatórios legados, aplica um fallback seguro usando a 'Data' do acontecimento.
+ */
 function consultarEnvios(fiscalNome, dataInicio, dataFim, motivo, carro, prefixo, fiscalFiltro, papel, apelido) {
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -583,11 +616,11 @@ function consultarEnvios(fiscalNome, dataInicio, dataFim, motivo, carro, prefixo
       dataFimObj = new Date(parts[0], parts[1] - 1, parts[2]);
     }
     
-    // Carrega a planilha de login para obter os papéis de cada usuário
+    // Carrega a planilha de login para obter os papéis
     const loginSheet = ss.getSheetByName("login");
     const loginData = loginSheet.getDataRange().getValues();
-    const fiscaisSet = new Set();     // apelidos com função 'FISCAL'
-    const inspetoresSet = new Set();  // apelidos com função 'INSPETOR'
+    const fiscaisSet = new Set();     
+    const inspetoresSet = new Set();  
     for (let i = 1; i < loginData.length; i++) {
       const funcao = String(loginData[i][4] || "").trim().toUpperCase();
       const apelidoLogin = loginData[i][2];
@@ -599,7 +632,7 @@ function consultarEnvios(fiscalNome, dataInicio, dataFim, motivo, carro, prefixo
       }
     }
     
-    // Índices das colunas da planilha de envios
+    // Índices das colunas
     const cabecalhos = dados[0].map(h => String(h).trim());
     const idxDataHora = cabecalhos.indexOf("DataHora");
     const idxFiscal = cabecalhos.indexOf("Fiscal");
@@ -616,6 +649,9 @@ function consultarEnvios(fiscalNome, dataInicio, dataFim, motivo, carro, prefixo
     const idxCobrador = cabecalhos.indexOf("Cobrador");
     const idxLinha = cabecalhos.indexOf("Linha");
     
+    // Mapeia o índice da nova coluna
+    const idxDataPreenchimento = cabecalhos.indexOf("DataPreenchimento"); 
+    
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
     
@@ -627,26 +663,26 @@ function consultarEnvios(fiscalNome, dataInicio, dataFim, motivo, carro, prefixo
       const fiscalLinha = linha[idxFiscal];
       if (!dataHora || !fiscalLinha) continue;
       
-      // Converte data/hora do registro
+      // Converte data/hora do registro para base
       let dataHoraStr = "";
       if (dataHora instanceof Date) {
         dataHoraStr = Utilities.formatDate(dataHora, "America/Sao_Paulo", "dd/MM/yyyy HH:mm:ss");
       } else {
         dataHoraStr = String(dataHora).trim();
       }
-      // dataEnvioStr é a data (parte da data/hora) já no formato dd/MM/yyyy
+      
       const dataEnvioStr = dataHoraStr.split(" ")[0];
       const [dia, mes, ano] = dataEnvioStr.split("/").map(Number);
       const dataRegistro = new Date(ano, mes - 1, dia);
       
-      // Filtro padrão: últimos 4 dias se não houver filtro de período explícito
+      // Filtro padrão de período
       if (!dataInicio && !dataFim) {
         const quatroDiasAtras = new Date(hoje);
         quatroDiasAtras.setDate(quatroDiasAtras.getDate() - 4);
         if (dataRegistro < quatroDiasAtras) continue;
       }
       
-      // Filtros básicos (já aplicados pelo front-end, mas reforçamos aqui)
+      // Filtros básicos
       if (fiscalNome && fiscalLinha !== fiscalNome) continue;
       if (fiscalFiltro && fiscalLinha !== fiscalFiltro) continue;
       if (dataInicioObj && dataRegistro < dataInicioObj) continue;
@@ -662,37 +698,25 @@ function consultarEnvios(fiscalNome, dataInicio, dataFim, motivo, carro, prefixo
       // ========== REGRAS DE PERMISSÃO POR PERFIL ==========
       switch (papel) {
         case 'FISCAL':
-          // Fiscal vê apenas seus próprios envios
           permitido = (fiscalLinha === apelido);
           break;
-          
         case 'INSPETOR':
-          // Inspetor vê:
-          // 1) Seus próprios envios
-          // 2) Envios de FISCAIS (exceto PEDIDO DE FOLGAS)
-          // Não vê envios de outros inspetores
           const isProprioInsp = (fiscalLinha === apelido);
           const isFiscalInsp = fiscaisSet.has(fiscalLinha);
-          // Inspetor vê próprios envios ou envios de fiscais, exceto pedidos de folga
           if (isProprioInsp || (isFiscalInsp && motivoEnvio !== 'PEDIDO DE FOLGAS')) {
             permitido = true;
           }
           break;
-          
         case 'ENCARREGADO':
         case 'GERENTE':
         case 'ADMIN':
-          // Encarregado, Gerente e Admin veem todas as informações
           permitido = true;
           break;
-          
         case 'SAF':
-          // SAF vê todos os envios para área SAF, ou com motivo AVARIAS (qualquer área)
           if (area === 'SAF' || motivoEnvio === 'AVARIAS') {
             permitido = true;
           }
           break;
-          
         default:
           permitido = false;
       }
@@ -701,22 +725,15 @@ function consultarEnvios(fiscalNome, dataInicio, dataFim, motivo, carro, prefixo
       if (permitido) {
         const diffDias = Math.floor((hoje - dataRegistro) / (1000 * 60 * 60 * 24));
         switch (papel) {
-          case 'FISCAL':
-            if (diffDias > 30) permitido = false;
-            break;
-          case 'INSPETOR':
-            if (diffDias > 60) permitido = false;
-            break;
+          case 'FISCAL': if (diffDias > 30) permitido = false; break;
+          case 'INSPETOR': if (diffDias > 60) permitido = false; break;
           case 'ENCARREGADO':
-          case 'GERENTE':
-            if (diffDias > 90) permitido = false;
-            break;
-          // SAF e ADMIN não têm limite de dias
+          case 'GERENTE': if (diffDias > 90) permitido = false; break;
         }
       }
       
       if (permitido) {
-        // Processa os anexos para incluir URLs de download direto
+        // Tratamento de anexos processados (mantido intacto)
         let anexosProcessados = [];
         const anexoRaw = linha[idxAnexo] || "";
         if (anexoRaw && anexoRaw !== "Nenhum" && anexoRaw.trim() !== "") {
@@ -725,47 +742,42 @@ function consultarEnvios(fiscalNome, dataInicio, dataFim, motivo, carro, prefixo
             const linkOriginal = links[j].trim();
             if (linkOriginal) {
               let fileId = null;
-              // Regex para extrair ID do arquivo do Google Drive
-              var regexId1 = new RegExp("/d/([a-zA-Z0-9_-]+)");
-              var regexId2 = new RegExp("id=([a-zA-Z0-9_-]+)");
-              var regexId3 = new RegExp("file/d/([a-zA-Z0-9_-]+)");
-              var regexId4 = new RegExp("uc\\?id=([a-zA-Z0-9_-]+)");
-              var regexId5 = new RegExp("open\\?id=([a-zA-Z0-9_-]+)");
-              var regexId6 = new RegExp("/u/\\d/d/([a-zA-Z0-9_-]+)");
-              
-              var match;
-              if ((match = linkOriginal.match(regexId1)) && match[1]) {
-                fileId = match[1];
-              } else if ((match = linkOriginal.match(regexId2)) && match[1]) {
-                fileId = match[1];
-              } else if ((match = linkOriginal.match(regexId3)) && match[1]) {
-                fileId = match[1];
-              } else if ((match = linkOriginal.match(regexId4)) && match[1]) {
-                fileId = match[1];
-              } else if ((match = linkOriginal.match(regexId5)) && match[1]) {
-                fileId = match[1];
-              } else if ((match = linkOriginal.match(regexId6)) && match[1]) {
-                fileId = match[1];
+              var regexes = [
+                /\/d\/([a-zA-Z0-9_-]+)/, /id=([a-zA-Z0-9_-]+)/, /file\/d\/([a-zA-Z0-9_-]+)/,
+                /uc\?id=([a-zA-Z0-9_-]+)/, /open\?id=([a-zA-Z0-9_-]+)/, /\/u\/\d\/d\/([a-zA-Z0-9_-]+)/
+              ];
+              for(let r of regexes) {
+                let match = linkOriginal.match(r);
+                if (match && match[1]) { fileId = match[1]; break; }
               }
               if (fileId) {
-                const downloadUrl = "https://drive.google.com/uc?export=download&id=" + fileId;
-                const viewUrl = "https://drive.google.com/file/d/" + fileId + "/view";
                 anexosProcessados.push({
                   urlOriginal: linkOriginal,
-                  urlDownload: downloadUrl,
-                  urlVisualizacao: viewUrl,
+                  urlDownload: "https://drive.google.com/uc?export=download&id=" + fileId,
+                  urlVisualizacao: "https://drive.google.com/file/d/" + fileId + "/view",
                   fileId: fileId
                 });
               } else {
                 anexosProcessados.push({
-                  urlOriginal: linkOriginal,
-                  urlDownload: linkOriginal,
-                  urlVisualizacao: linkOriginal,
-                  fileId: null
+                  urlOriginal: linkOriginal, urlDownload: linkOriginal,
+                  urlVisualizacao: linkOriginal, fileId: null
                 });
               }
             }
           }
+        }
+        
+        // =================================================================
+        // CORREÇÃO: LÓGICA DE DEFINIÇÃO DA DATA DE PREENCHIMENTO FINAL
+        // =================================================================
+        let dataPreenchimentoFinal = "";
+        if (idxDataPreenchimento !== -1 && linha[idxDataPreenchimento]) {
+          // Se existir a coluna e ela estiver preenchida, usa a info real do front-end
+          dataPreenchimentoFinal = formatarDataRaw(linha[idxDataPreenchimento]);
+        } else {
+          // Fallback Seguro (Planilhas Legadas): Em vez de usar a DataHora do servidor que causa delay,
+          // espelha de maneira sensata a data do acontecimento preenchida pelo usuário.
+          dataPreenchimentoFinal = linha[idxData] ? formatarDataRaw(linha[idxData]) : dataEnvioStr;
         }
         
         resultados.push({
@@ -776,7 +788,6 @@ function consultarEnvios(fiscalNome, dataInicio, dataFim, motivo, carro, prefixo
           historico: linha[idxHistorico],
           anexo: linha[idxAnexo],
           anexosDetalhados: anexosProcessados,
-          // Usa a nova função formatarDataRaw para evitar fuso horário
           data: linha[idxData] ? formatarDataRaw(linha[idxData]) : "",
           hora: linha[idxHora] || "",
           sentido: linha[idxSentido] || "",
@@ -784,13 +795,12 @@ function consultarEnvios(fiscalNome, dataInicio, dataFim, motivo, carro, prefixo
           cobrador: linha[idxCobrador] || "",
           linha: linha[idxLinha] || "",
           fiscal: fiscalLinha,
-          // ***** CORREÇÃO: usa dataEnvioStr diretamente *****
-          dataPreenchimento: dataEnvioStr
+          dataPreenchimento: dataPreenchimentoFinal // Passando a data correta para a UI
         });
       }
     }
     
-    // Ordenação decrescente por data (mais recente primeiro)
+    // Ordenação decrescente por data
     resultados.sort((a, b) => {
       const converte = (dataStr) => {
         if (!dataStr) return 0;
@@ -799,9 +809,7 @@ function consultarEnvios(fiscalNome, dataInicio, dataFim, motivo, carro, prefixo
         const [dia, mes, ano] = partes.map(Number);
         return new Date(ano, mes - 1, dia).getTime();
       };
-      const timeA = converte(a.data);
-      const timeB = converte(b.data);
-      return timeB - timeA;
+      return converte(b.data) - converte(a.data);
     });
     
     return resultados;
