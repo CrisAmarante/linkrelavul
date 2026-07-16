@@ -454,6 +454,46 @@ function truncarTexto(texto, maxCaracteres = CONFIG.MAX_CARACTERES_HISTORICO, ma
   }
   return textoFinal;
 }
+// ======================= FUNÇÃO AUXILIAR PARA FORMATAR DATAS COM FUSO HORÁRIO CORRETO =======================
+/**
+ * Formata uma data da planilha para dd/MM/yyyy, corrigindo problemas de fuso horário.
+ * A planilha pode armazenar datas como Date ou string ISO (YYYY-MM-DD).
+ * Quando é string ISO, o dia pode ser alterado devido ao fuso horário.
+ */
+function formatDateSafe(dateValue) {
+  if (!dateValue) return "";
+
+  // Se já for string no formato dd/MM/yyyy, retorna como está
+  if (typeof dateValue === 'string' && /^\d{2}\/\d{2}\/\d{4}$/.test(dateValue)) {
+    return dateValue;
+  }
+
+  // Se for string ISO (YYYY-MM-DD), extrai as partes diretamente para evitar fuso horário
+  if (typeof dateValue === 'string' && /^\d{4}-\d{2}-\d{2}/.test(dateValue)) {
+    const parts = dateValue.split('-');
+    const ano = parts[0];
+    const mes = parts[1];
+    const dia = parts[2].substring(0, 2); // Pode ter hora após espaço
+    return `${dia}/${mes}/${ano}`;
+  }
+
+  // Se for objeto Date, formata com fuso horário
+  if (dateValue instanceof Date) {
+    return Utilities.formatDate(dateValue, "America/Sao_Paulo", "dd/MM/yyyy");
+  }
+
+  // Tenta converter para Date como fallback
+  try {
+    const dateObj = new Date(dateValue);
+    if (!isNaN(dateObj.getTime())) {
+      return Utilities.formatDate(dateObj, "America/Sao_Paulo", "dd/MM/yyyy");
+    }
+  } catch (e) {
+    // Ignora erro e retorna vazio
+  }
+
+  return String(dateValue);
+}
 // ======================= SALVAR ENVIO DE INFORMAÇÕES =======================
 function salvarEnvioInformacoes(dadosJson) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
