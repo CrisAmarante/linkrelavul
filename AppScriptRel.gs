@@ -494,6 +494,26 @@ function formatDateSafe(dateValue) {
 
   return String(dateValue);
 }
+
+/**
+ * Formata uma string no formato YYYY-MM-DD para DD/MM/YYYY
+ * sem conversão para Date, evitando problemas de fuso horário.
+ * Esta função é usada para o campo 'Data' (data do acontecimento) vindo da planilha.
+ */
+function formatarDataRaw(valor) {
+  if (!valor) return "";
+  if (typeof valor === 'string' && /^\d{4}-\d{2}-\d{2}/.test(valor)) {
+    const partes = valor.split('-');
+    return `${partes[2]}/${partes[1]}/${partes[0]}`;
+  }
+  // Fallback para outros tipos
+  try {
+    return Utilities.formatDate(new Date(valor), "America/Sao_Paulo", "dd/MM/yyyy");
+  } catch (e) {
+    return String(valor);
+  }
+}
+
 // ======================= SALVAR ENVIO DE INFORMAÇÕES =======================
 function salvarEnvioInformacoes(dadosJson) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -614,6 +634,7 @@ function consultarEnvios(fiscalNome, dataInicio, dataFim, motivo, carro, prefixo
       } else {
         dataHoraStr = String(dataHora).trim();
       }
+      // dataEnvioStr é a data (parte da data/hora) já no formato dd/MM/yyyy
       const dataEnvioStr = dataHoraStr.split(" ")[0];
       const [dia, mes, ano] = dataEnvioStr.split("/").map(Number);
       const dataRegistro = new Date(ano, mes - 1, dia);
@@ -726,7 +747,6 @@ function consultarEnvios(fiscalNome, dataInicio, dataFim, motivo, carro, prefixo
               } else if ((match = linkOriginal.match(regexId6)) && match[1]) {
                 fileId = match[1];
               }
-              // Removido loop 'for (const pattern of patterns)' pois foi substituído pelos regex acima
               if (fileId) {
                 const downloadUrl = "https://drive.google.com/uc?export=download&id=" + fileId;
                 const viewUrl = "https://drive.google.com/file/d/" + fileId + "/view";
@@ -756,6 +776,7 @@ function consultarEnvios(fiscalNome, dataInicio, dataFim, motivo, carro, prefixo
           historico: linha[idxHistorico],
           anexo: linha[idxAnexo],
           anexosDetalhados: anexosProcessados,
+          // Usa a nova função formatarDataRaw para evitar fuso horário
           data: linha[idxData] ? formatarDataRaw(linha[idxData]) : "",
           hora: linha[idxHora] || "",
           sentido: linha[idxSentido] || "",
@@ -763,7 +784,8 @@ function consultarEnvios(fiscalNome, dataInicio, dataFim, motivo, carro, prefixo
           cobrador: linha[idxCobrador] || "",
           linha: linha[idxLinha] || "",
           fiscal: fiscalLinha,
-          dataPreenchimento: extrairDataDeDataHora(linha[idxDataHora])  // Data de preenchimento pelo fiscal (dd/MM/yyyy)
+          // ***** CORREÇÃO: usa dataEnvioStr diretamente *****
+          dataPreenchimento: dataEnvioStr
         });
       }
     }
