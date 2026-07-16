@@ -756,14 +756,14 @@ function consultarEnvios(fiscalNome, dataInicio, dataFim, motivo, carro, prefixo
           historico: linha[idxHistorico],
           anexo: linha[idxAnexo],
           anexosDetalhados: anexosProcessados,
-          data: linha[idxData] ? Utilities.formatDate(new Date(linha[idxData]), "America/Sao_Paulo", "dd/MM/yyyy") : "",
+          data: linha[idxData] ? formatarDataRaw(linha[idxData]) : "",
           hora: linha[idxHora] || "",
           sentido: linha[idxSentido] || "",
           motorista: linha[idxMotorista] || "",
           cobrador: linha[idxCobrador] || "",
           linha: linha[idxLinha] || "",
           fiscal: fiscalLinha,
-          dataPreenchimento: dataEnvioStr  // Data de preenchimento pelo fiscal (dd/MM/yyyy)
+          dataPreenchimento: extrairDataDeDataHora(linha[idxDataHora])  // Data de preenchimento pelo fiscal (dd/MM/yyyy)
         });
       }
     }
