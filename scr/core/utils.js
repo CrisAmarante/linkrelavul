@@ -72,28 +72,35 @@ class ModalController {
 // ====================================================================
 // FORMATAÇÃO DE DATA E HORA
 // ====================================================================
+/**
+ * Formata uma data para DD/MM/YYYY, corrigindo problemas de fuso horário.
+ * - Se for string ISO (YYYY-MM-DD), extrai diretamente.
+ * - Se for objeto Date, usa getDate, getMonth, getFullYear (fuso local).
+ * - Caso contrário, tenta extrair uma data no formato dd/mm/aaaa.
+ */
 function formatarData(data) {
   if (!data) return 'N/I';
-  
+
+  // Caso seja string ISO (YYYY-MM-DD)
+  if (typeof data === 'string' && /^\d{4}-\d{2}-\d{2}/.test(data)) {
+    const partes = data.split('-');
+    // Pode vir com hora "YYYY-MM-DD HH:mm:ss"
+    const dia = partes[2].substring(0, 2);
+    return `${dia}/${partes[1]}/${partes[0]}`;
+  }
+
+  // Caso seja objeto Date
   if (data instanceof Date) {
     const dia = data.getDate().toString().padStart(2, '0');
     const mes = (data.getMonth() + 1).toString().padStart(2, '0');
     const ano = data.getFullYear();
     return `${dia}/${mes}/${ano}`;
   }
-  
-  if (typeof data === 'string') {
-    let dataStr = data.split('T')[0].split(' ')[0];
-    if (dataStr.match(/^\d{4}-\d{2}-\d{2}/)) {
-      const [ano, mes, dia] = dataStr.split('-');
-      return `${dia}/${mes}/${ano}`;
-    }
-    if (dataStr.match(/^\d{2}\/\d{2}\/\d{4}/)) return dataStr;
-  }
-  
+
+  // Tentar extrair via regex
   const match = String(data).match(/(\d{2})\/(\d{2})\/(\d{4})/);
   if (match) return match[0];
-  
+
   return 'N/I';
 }
 
