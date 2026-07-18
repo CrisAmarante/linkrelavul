@@ -583,8 +583,8 @@ class AdminPanelController {
       return;
     }
     
-    // Validação dupla da senha do admin para criação e edição com senha
-    if (mode === 'create' || (mode === 'edit' && senha)) {
+    // Validação dupla da senha do admin para criação e edição com senha (DESATIVADO TEMPORARIAMENTE)
+    /*if (mode === 'create' || (mode === 'edit' && senha)) {
       try {
         const validacao = await validarSenhaAdmin();
         if (!validacao.valido) {
@@ -596,7 +596,7 @@ class AdminPanelController {
         return;
       }
     }
-    
+   */ 
     if (mode === 'create') {
       if (!matricula || !apelidoInput) {
         alert('⚠️ Matrícula e Apelido/Chapa são obrigatórios para criar usuário.');
