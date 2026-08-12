@@ -59,7 +59,8 @@ async function checkLoginStatus() {
     }
     
     currentUserRole = role;
-    canCreateInspection = (role === 'FISCAL' || role === 'INSPETOR');
+    // Regra de criação: FISCAL, INSPETOR e ADMIN podem criar inspeções e tacógrafos
+    canCreateInspection = (role === 'FISCAL' || role === 'INSPETOR' || role === 'ADMIN');
     
     // Mostra/oculta cards especiais
     if (btnInspecao && role !== 'MONITOR') btnInspecao.style.display = 'flex';
@@ -271,6 +272,7 @@ function ajustarCardsPorPerfil(role) {
   const todosCards = document.querySelectorAll('#inspector-screen .inspector-card');
   const cardInspecao = document.getElementById('btn-inspecao-veicular');
   const cardEnvio = document.getElementById('btn-envio-informacoes');
+  const cardTacografo = document.getElementById('btn-tacografo');
   
   const cardRelatorioDiario = document.querySelector('a.inspector-card[href*="docs.google.com/forms/d/e/1FAIpQLSe82OZRZPC_WTgXqF0N2pAuiFaudKONLYRuSnfnBpLPS0fYpw"]');
   const cardConsultaPlacas = document.querySelector('a.inspector-card[href*="app.powerbi.com/view"]');
@@ -278,7 +280,7 @@ function ajustarCardsPorPerfil(role) {
   
   if (role === 'FISCAL') {
     todosCards.forEach(card => {
-      if (card === cardInspecao || card === cardEnvio) {
+      if (card === cardInspecao || card === cardEnvio || card === cardTacografo) {
         card.style.display = 'flex';
       } else {
         card.style.display = 'none';
