@@ -74,6 +74,12 @@ class TacografoModule {
     if (getEl('tacografo-linha')) getEl('tacografo-linha').value = '';
     if (getEl('tacografo-carro')) getEl('tacografo-carro').value = '';
     if (getEl('tacografo-motorista')) getEl('tacografo-motorista').value = '';
+    
+    // Reseta os radio buttons de vínculo
+    const vinculoRadios = document.querySelectorAll('input[name="tacografoVinculo"]');
+    vinculoRadios.forEach(radio => {
+      radio.checked = false;
+    });
   }
 
   coletarDados() {
@@ -85,12 +91,24 @@ class TacografoModule {
     const data = getEl('tacografo-data')?.value;
     const hora = getEl('tacografo-hora')?.value;
     
+    // Coleta o vínculo selecionado
+    const vinculoRadios = document.querySelectorAll('input[name="tacografoVinculo"]');
+    let vinculo = null;
+    vinculoRadios.forEach(radio => {
+      if (radio.checked) vinculo = radio.value;
+    });
+    
     if (!terminal || !linha || !carro || !motorista) {
       alert('Preencha todos os campos: TERMINAL, LINHA, CARRO e MOTORISTA.');
       return null;
     }
     
-    return { terminal, linha, carro, motorista, fiscal, data, hora };
+    if (!vinculo) {
+      alert('Selecione o vínculo do motorista: "Motorista cadastrado/vinculado no ponto" ou "Motorista com vínculo OK".');
+      return null;
+    }
+    
+    return { terminal, linha, carro, motorista, fiscal, data, hora, vinculo };
   }
 
   async enviarCadastro() {
@@ -109,10 +127,11 @@ class TacografoModule {
       motorista: dados.motorista,
       fiscal: dados.fiscal,
       data: dados.data,
-      hora: dados.hora
+      hora: dados.hora,
+      vinculo: dados.vinculo
     };
-
-    let resumo = `CONFIRMAR ENVIO?\n\nTerminal: ${dadosEnvio.terminal}\nLinha: ${dadosEnvio.linha}\nCarro: ${dadosEnvio.carro}\nMotorista: ${dadosEnvio.motorista}\nFiscal: ${dadosEnvio.fiscal}\nData/Hora: ${dados.data} ${dados.hora}\n\nDeseja enviar os dados?`;
+    
+    let resumo = `CONFIRMAR ENVIO?\n\nTerminal: ${dadosEnvio.terminal}\nLinha: ${dadosEnvio.linha}\nCarro: ${dadosEnvio.carro}\nMotorista: ${dadosEnvio.motorista}\nFiscal: ${dadosEnvio.fiscal}\nData/Hora: ${dados.data} ${dados.hora}\nVínculo: ${dados.vinculo === 'CADASTRADO' ? 'Motorista cadastrado/vinculado no ponto' : 'Motorista com vínculo OK'}\n\nDeseja enviar os dados?`;
     if (!confirm(resumo)) return;
 
     try {
@@ -139,7 +158,7 @@ class TacografoModule {
     this.conferirCadastramentosComFiltro(hoje, hoje, null, null);
   }
 
-  conferirCadastramentosComFiltro(dataInicio, dataFim, carro, fiscalFiltro) {
+  conferirCadastramentosComFiltro(dataInicio, dataFim, carro, fiscalFiltro, motorista, vinculoPonto) {
     // --- Validações de data ---
     const hojeStr = new Date().toISOString().split('T')[0];
 
@@ -161,6 +180,8 @@ class TacografoModule {
     if (dataInicio) params.append('dataInicio', dataInicio);
     if (dataFim) params.append('dataFim', dataFim);
     if (carro) params.append('carro', carro);
+    if (motorista) params.append('motorista', motorista);
+    if (vinculoPonto && vinculoPonto !== 'TODOS') params.append('vinculoPonto', vinculoPonto);
     if (fiscalFiltro) params.append('fiscalFiltro', fiscalFiltro);
     // Fiscais veem apenas seus próprios registros
     if (currentUserRole === 'FISCAL') {
@@ -228,6 +249,24 @@ function mostrarModalConferirTacografos(cadastramentos, role, params) {
         <div><label>Data Início</label><input type="date" id="filtro-tacografo-data-inicio" value="${hoje}" max="${hoje}"></div>
         <div><label>Data Fim</label><input type="date" id="filtro-tacografo-data-fim" value="${hoje}" max="${hoje}"></div>
         <div><label>Carro</label><input type="text" id="filtro-tacografo-carro" placeholder="Prefixo"></div>
+        <div><label>Motorista</label><input type="text" id="filtro-tacografo-motorista" placeholder="Nome do motorista"></div>
+        <div>
+          <label>Vínculo Ponto</label>
+          <div style="display: flex; gap: 10px; align-items: center; height: 40px;">
+            <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
+              <input type="radio" name="filtro-tacografo-vinculo-ponto" value="CADASTRADO" style="cursor: pointer;">
+              <span>Cadastrado</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
+              <input type="radio" name="filtro-tacografo-vinculo-ponto" value="OK" style="cursor: pointer;">
+              <span>Vínculo OK</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
+              <input type="radio" name="filtro-tacografo-vinculo-ponto" value="TODOS" checked style="cursor: pointer;">
+              <span>Todos</span>
+            </label>
+          </div>
+        </div>
     `;
 
     if (!isFiscal && podeVerTodos) {
@@ -250,13 +289,24 @@ function mostrarModalConferirTacografos(cadastramentos, role, params) {
         const dataInicio = document.getElementById('filtro-tacografo-data-inicio').value;
         const dataFim = document.getElementById('filtro-tacografo-data-fim').value;
         const carro = document.getElementById('filtro-tacografo-carro').value;
+        const motorista = document.getElementById('filtro-tacografo-motorista').value;
         const fiscalFiltro =
           !isFiscal && podeVerTodos ? document.getElementById('filtro-tacografo-fiscal').value : null;
+        
+        // Obtém o valor selecionado nos radio buttons de vínculo
+        const vinculoPontoRadios = document.querySelectorAll('input[name="filtro-tacografo-vinculo-ponto"]');
+        let vinculoPonto = 'TODOS';
+        vinculoPontoRadios.forEach(radio => {
+          if (radio.checked) vinculoPonto = radio.value;
+        });
+        
         window.modals.tacografo.conferirCadastramentosComFiltro(
           dataInicio,
           dataFim,
           carro,
-          fiscalFiltro
+          fiscalFiltro,
+          motorista,
+          vinculoPonto
         );
       });
 
@@ -267,8 +317,16 @@ function mostrarModalConferirTacografos(cadastramentos, role, params) {
         document.getElementById('filtro-tacografo-data-inicio').value = hoje;
         document.getElementById('filtro-tacografo-data-fim').value = hoje;
         document.getElementById('filtro-tacografo-carro').value = '';
+        document.getElementById('filtro-tacografo-motorista').value = '';
         if (!isFiscal && podeVerTodos)
           document.getElementById('filtro-tacografo-fiscal').value = '';
+        
+        // Reseta os radio buttons para "Todos"
+        const vinculoPontoRadios = document.querySelectorAll('input[name="filtro-tacografo-vinculo-ponto"]');
+        vinculoPontoRadios.forEach(radio => {
+          radio.checked = (radio.value === 'TODOS');
+        });
+        
         window.modals.tacografo.conferirCadastramentos();
       });
   }
@@ -314,6 +372,10 @@ function mostrarModalConferirTacografos(cadastramentos, role, params) {
         html += `<small>Terminal: ${cad.terminal} | Motorista: ${cad.motorista}</small><br>`;
         if (!isFiscal && podeVerTodos) {
           html += `<small>Fiscal: ${cad.fiscal}</small><br>`;
+        }
+        // Exibe o vínculo se estiver disponível
+        if (cad.vinculo) {
+          html += `<small>Vínculo: ${cad.vinculo}</small><br>`;
         }
         html += `</div>`;
       }
@@ -393,6 +455,9 @@ function gerarTextoExportacaoTacografo(cadastramentos, role, isFiscal) {
       if (!isFiscal && podeVerTodos) {
         texto += `Fiscal: ${cad.fiscal}\n`;
       }
+      if (cad.vinculo) {
+        texto += `Vínculo: ${cad.vinculo}\n`;
+      }
       texto += `\n`;
     }
     texto += `\n`;
@@ -434,7 +499,7 @@ function gerarCSVExportacaoTacografo(cadastramentos) {
   });
 
   // Cabeçalho CSV
-  let csv = "Data;Hora;Terminal;Linha;Carro;Motorista;Fiscal\n";
+  let csv = "Data;Hora;Terminal;Linha;Carro;Motorista;Fiscal;Vinculo\n";
   
   for (const cad of ordenados) {
     const dataHoraParts = cad.dataHora ? cad.dataHora.split(' ') : ['', ''];
@@ -447,7 +512,8 @@ function gerarCSVExportacaoTacografo(cadastramentos) {
       cad.linha || '',
       cad.carro || '',
       cad.motorista || '',
-      cad.fiscal || ''
+      cad.fiscal || '',
+      cad.vinculo || ''
     ].map(field => `"${String(field).replace(/"/g, '""')}"`).join(';');
     csv += linha + '\n';
   }
